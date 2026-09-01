@@ -1,0 +1,27 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <ResourcePreloader />
+    @* PulsarComponents' components rely on box-sizing:border-box for their pixel-math layouts
+       (PulsarCalendar's time-grid especially) — this reset ships as a plain static asset, not
+       something Blazor's per-project scoped-CSS @import chain pulls in automatically, so every
+       consuming app must link it explicitly. Missing this produced a genuinely broken calendar
+       (oversized rows/misaligned gridlines) before it was traced to this. *@
+    <link rel="stylesheet" href="_content/PulsarComponents/pulsar-components.css" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["PulsarComponents.Sample.styles.css"]" />
+    <ImportMap />
+    <HeadOutlet @rendermode="InteractiveServer" />
+</head>
+
+<body>
+    <Routes @rendermode="InteractiveServer" />
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+
+</html>

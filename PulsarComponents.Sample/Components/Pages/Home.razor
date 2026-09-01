@@ -1,0 +1,100 @@
+@page "/"
+@inject IPulsarToastManager Toasts
+@inject IPulsarWindowManager Windows
+
+<PageTitle>Dashboard - PulsarComponents Sample</PageTitle>
+
+<h1 style="margin-top: 0;">Dashboard</h1>
+
+@if (_showWelcome)
+{
+    <PulsarAlert Color="PulsarColor.Info" Title="Welcome" OnClose="() => _showWelcome = false" Class="sample-dashboard__alert">
+        This whole app — toolbar, nav, splitter, and every widget on this page — is built from
+        <code>PulsarComponents</code> installed via <code>dotnet add package</code>, running on
+        Interactive Server.
+    </PulsarAlert>
+}
+
+<PulsarGrid Spacing="2" Class="sample-dashboard__stats">
+    @foreach (var stat in Stats)
+    {
+        <PulsarGridItem Xs="12" Sm="6" Md="3">
+            <PulsarCard Title="@stat.Title" Subtitle="@stat.Value">
+                <Actions>
+                    <PulsarChip Color="@(stat.Positive ? PulsarColor.Success : PulsarColor.Error)" Size="PulsarSize.Small">
+                        @stat.Delta
+                    </PulsarChip>
+                </Actions>
+            </PulsarCard>
+        </PulsarGridItem>
+    }
+</PulsarGrid>
+
+<PulsarText Variant="PulsarTextVariant.Overline">Filter by tag</PulsarText>
+<PulsarChipset>
+    @foreach (var tag in _tags)
+    {
+        <PulsarChip Selected="tag.Selected" OnClick="() => tag.Selected = !tag.Selected" Variant="PulsarVariant.Outlined">
+            @tag.Name
+        </PulsarChip>
+    }
+</PulsarChipset>
+
+<PulsarText Variant="PulsarTextVariant.Overline">Actions</PulsarText>
+<PulsarToolbar Gap="8" Style="padding: 0;">
+    <PulsarButton Variant="PulsarVariant.Outlined" OnClick="ShowSavedToast">Show toast</PulsarButton>
+    <PulsarButton Color="PulsarColor.Primary" OnClick="OpenQuickNote">Open quick note</PulsarButton>
+</PulsarToolbar>
+
+@code {
+    private bool _showWelcome = true;
+
+    private sealed class Tag
+    {
+        public required string Name { get; init; }
+        public bool Selected { get; set; }
+    }
+
+    private readonly List<Tag> _tags =
+    [
+        new() { Name = "All", Selected = true },
+        new() { Name = "Errors" },
+        new() { Name = "Warnings" },
+        new() { Name = "Deploys" },
+    ];
+
+    private sealed record Stat(string Title, string Value, string Delta, bool Positive);
+
+    private static readonly Stat[] Stats =
+    [
+        new("Revenue", "$48,200", "+12%", true),
+        new("Active users", "1,204", "+4%", true),
+        new("Open tickets", "12", "-3%", true),
+        new("Deploys", "3", "0%", false),
+    ];
+
+    private void ShowSavedToast()
+    {
+        Toasts.Show(new PulsarToastOptions
+        {
+            Title = "Saved",
+            Message = "Your changes were saved.",
+            Color = PulsarColor.Success,
+        });
+    }
+
+    private void OpenQuickNote()
+    {
+        Windows.Open(new PulsarWindowOptions
+        {
+            Title = "Quick note",
+            Width = 420,
+            Height = 320,
+            MinWidth = 320,
+            MinHeight = 220,
+        }, @<div style="display: flex; flex-direction: column; gap: 12px; height: 100%;">
+            <textarea style="flex: 1 1 auto; resize: none; padding: 8px; border-radius: 6px; border: 1px solid var(--pulsar-palette-divider, #E4E7EC); font: inherit;" placeholder="Type a quick note..."></textarea>
+            <PulsarButton Color="PulsarColor.Primary" OnClick="ShowSavedToast">Save</PulsarButton>
+        </div>);
+    }
+}

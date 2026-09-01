@@ -1,0 +1,110 @@
+/* PulsarPanel is always display:grid internally — a leaf dock zone holding plain children needs
+   its own display overridden (!important, to out-specificity the library's own scoped rule) or its
+   content mis-places into the panel's own grid cells instead of flowing normally. Same pattern as
+   WindowDashboardDemo.razor's own toolbar/nav zones in the docs site.
+
+   Every rule needs the ".sample-shell" prefix (a real element this component directly renders) for
+   ::deep to have anything to anchor on — a root-level PulsarThemeProvider renders no element of its
+   own, so a bare "::deep .foo" rule compiles to requiring an ancestor that never exists in the DOM
+   and silently matches nothing. */
+.sample-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.sample-shell ::deep .sample-shell__brand {
+    white-space: nowrap;
+}
+
+/* The dock area (nav + splitter + content) fills whatever height the sticky AppBar above it
+   doesn't use — min-height:0 is required for a flex child to be allowed to shrink below its
+   content's natural height, otherwise it just pushes the page taller instead of scrolling. */
+.sample-shell ::deep .sample-shell__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid !important;
+    grid-template-columns: 220px 1fr;
+}
+
+.sample-shell ::deep .sample-shell__icon-button {
+    width: 36px;
+    height: 36px;
+    padding: 0 !important;
+    justify-content: center;
+}
+
+.sample-shell ::deep .sample-shell__avatar-trigger {
+    cursor: pointer;
+}
+
+.sample-shell ::deep .sample-shell__menu {
+    display: flex !important;
+    flex-direction: column;
+    width: 220px;
+    padding: 8px;
+}
+
+.sample-shell ::deep .sample-shell__menu-heading {
+    padding: 6px 8px 8px;
+    color: var(--pulsar-palette-text-secondary, #5B6270);
+}
+
+.sample-shell ::deep .sample-shell__menu-note {
+    padding: 8px;
+    border-radius: var(--pulsar-sizing-border-radius-small, 6px);
+}
+
+.sample-shell ::deep .sample-shell__menu-note:hover {
+    background: var(--pulsar-palette-divider, #E4E7EC);
+}
+
+.sample-shell ::deep .sample-shell__menu-item {
+    justify-content: flex-start;
+}
+
+.sample-shell ::deep .sample-shell__nav {
+    display: flex !important;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sample-shell ::deep .sample-shell__nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--pulsar-sizing-border-radius-small, 6px);
+    color: var(--pulsar-palette-text-secondary, #5B6270);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.sample-shell ::deep .sample-shell__nav-link:hover {
+    background: var(--pulsar-palette-divider, #E4E7EC);
+    color: var(--pulsar-palette-text-primary, #1A1D23);
+}
+
+.sample-shell ::deep .sample-shell__nav-link.active {
+    background: color-mix(in srgb, var(--pulsar-palette-primary, #4C6FFF) 14%, transparent);
+    color: var(--pulsar-palette-primary, #4C6FFF);
+}
+
+/* The Fill zone (@Body) renders whatever the current page puts there — always more than one
+   top-level element (a heading plus content), so it needs the same flex-column override. */
+.sample-shell ::deep .sample-shell__content {
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Without this, flex's default flex-shrink:1 proportionally SQUISHES every child to fit the
+   container's own height instead of letting .sample-shell__content's overflow-y:auto actually
+   scroll — every child ends up with a near-zero computed height while its content still renders at
+   natural size, bleeding into the next sibling (confirmed via getBoundingClientRect: an <h1> was
+   computing to ~5px tall). flex-shrink:0 makes children keep their natural height so overflow can
+   do its job. */
+.sample-shell ::deep .sample-shell__content > * {
+    flex-shrink: 0;
+}

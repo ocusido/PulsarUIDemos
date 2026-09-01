@@ -1,0 +1,38 @@
+@page "/calendar"
+
+<PageTitle>Calendar - PulsarComponents Sample</PageTitle>
+
+<h1 style="margin-top: 0;">Calendar</h1>
+<p>The heaviest component in the library — drag/resize events, running through the same real published package as the rest of this app.</p>
+
+<PulsarCalendar Events="_events" View="PulsarCalendarView.Week" Style="height: 640px;" />
+
+@code {
+    private static readonly DateTime WeekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+
+    private readonly List<PulsarCalendarEvent> _events =
+    [
+        new()
+        {
+            Title = "Team standup",
+            Start = WeekStart.AddDays(1).AddHours(9),
+            End = WeekStart.AddDays(1).AddHours(9).AddMinutes(30),
+            Color = PulsarColor.Primary,
+        },
+        new()
+        {
+            Title = "Design review",
+            Start = WeekStart.AddDays(2).AddHours(14),
+            End = WeekStart.AddDays(2).AddHours(15),
+            Color = PulsarColor.Secondary,
+        },
+        new()
+        {
+            Title = "Release 0.2.0",
+            Start = WeekStart.AddDays(3),
+            End = WeekStart.AddDays(3),
+            IsAllDay = true,
+            Color = PulsarColor.Success,
+        },
+    ];
+}

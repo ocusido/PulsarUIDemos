@@ -1,0 +1,29 @@
+@page "/components"
+
+<PageTitle>Components - PulsarComponents Sample</PageTitle>
+
+<h1 style="margin-top: 0;">Components</h1>
+<p>A couple more of the shipped components, rounding out the shell and dashboard above.</p>
+
+<PulsarTabs>
+    <PulsarTab Title="Install">
+        <p>How this whole app got its <code>PulsarComponents</code> dependency:</p>
+        <PulsarCodeBlock Code="@InstallSnippet" />
+    </PulsarTab>
+    <PulsarTab Title="Usage">
+        <p>Every component in this app follows the same shape — a plain <code>Pulsar*</code>-prefixed tag, no extra imports or <code>&lt;script&gt;</code> tags:</p>
+        <PulsarCodeBlock Code="@UsageSnippet" />
+    </PulsarTab>
+</PulsarTabs>
+
+@code {
+    private const string InstallSnippet = "dotnet add package PulsarComponents";
+
+    private const string UsageSnippet = """
+        <PulsarThemeProvider>
+            <PulsarButton Variant="PulsarVariant.Filled" Color="PulsarColor.Primary">
+                Hello, Pulsar
+            </PulsarButton>
+        </PulsarThemeProvider>
+        """;
+}
