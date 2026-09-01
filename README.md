@@ -1,19 +1,21 @@
-# PulsarComponents Sample
+# PulsarUIDemos
 
-A working example app built with [PulsarComponents](https://pulsarui.com) — a Blazor component
-library built from scratch, with no dependency on Bootstrap, Tailwind, or MudBlazor.
+Example apps built with [PulsarComponents](https://pulsarui.com) — a Blazor component library
+built from scratch, with no dependency on Bootstrap, Tailwind, or MudBlazor.
 
-This is a full Blazor Server (Interactive) app: a dashboard with stat cards, tag filters, a toast
-and a window opened from action buttons, a calendar page, and a components showcase page — a
+## PulsarComponents.Sample
+
+A full Blazor Server (Interactive) app: a dashboard with stat cards, tag filters, a toast and a
+window opened from action buttons, a calendar page, and a components showcase page — a
 sidebar/toolbar app shell built entirely out of `PulsarComponents`, installed the same way any
 consumer of the package would install it (`dotnet add package`, not a project reference into the
 library's own source).
 
-## Run it
+### Run it
 
 ```bash
-git clone https://github.com/ocusido/PulsarComponents.Sample.git
-cd PulsarComponents.Sample
+git clone https://github.com/ocusido/PulsarUIDemos.git
+cd PulsarUIDemos
 dotnet run --project PulsarComponents.Sample
 ```
 
