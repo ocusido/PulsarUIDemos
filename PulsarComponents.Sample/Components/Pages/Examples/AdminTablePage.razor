@@ -1,0 +1,208 @@
+@page "/examples/admin-table"
+@layout ExampleLayout
+@inject IPulsarToastManager Toasts
+@inject IPulsarWindowManager Windows
+@inject ExampleSourceService Source
+
+<PageTitle>Admin Table - PulsarComponents Sample</PageTitle>
+
+<div class="admin-table-page">
+    <div class="admin-table-page__header">
+        <div>
+            <PulsarText Variant="PulsarTextVariant.H4">Users</PulsarText>
+            <PulsarText Variant="PulsarTextVariant.Body1" Color="PulsarColor.Neutral">
+                A realistic admin table — sort any column, use the search box (built into
+                <code>PulsarDataGrid</code>, nothing custom-wired), and double-click a cell to edit
+                it in place.
+            </PulsarText>
+        </div>
+        <PulsarButton Color="PulsarColor.Primary" OnClick="OpenAddUser">Add user</PulsarButton>
+    </div>
+
+    <PulsarDataGrid TRow="User" Items="@_users" RowKey="@(u => u.Id)" OnCellEdit="HandleCellEdit" StripedRows="true">
+        <PulsarDataGridColumn TRow="User" Id="avatar" Header="" Width="56px" Sortable="false" Filterable="false">
+            <CellTemplate Context="user">
+                <PulsarAvatar Initials="@Initials(user.Name)" Color="PulsarColor.Primary" Size="PulsarSize.Small" />
+            </CellTemplate>
+        </PulsarDataGridColumn>
+        <PulsarDataGridColumn TRow="User" Id="name" Header="Name" Field="@(u => u.Name)" Editable="true" />
+        <PulsarDataGridColumn TRow="User" Id="email" Header="Email" Field="@(u => u.Email)" Editable="true" />
+        <PulsarDataGridColumn TRow="User" Id="role" Header="Role" Field="@(u => u.Role)" Editable="true">
+            <EditTemplate Context="context">
+                <PulsarSelect TValue="string" Value="@(context.Value as string)" Size="PulsarSize.Small" FullWidth="true"
+                              ValueChanged="@((string? v) => context.Commit(v))">
+                    <PulsarSelectItem TValue="string" Option="@("Admin")" />
+                    <PulsarSelectItem TValue="string" Option="@("Editor")" />
+                    <PulsarSelectItem TValue="string" Option="@("Viewer")" />
+                </PulsarSelect>
+            </EditTemplate>
+        </PulsarDataGridColumn>
+        <PulsarDataGridColumn TRow="User" Id="active" Header="Active" Align="PulsarDataGridColumnAlign.Center" Field="@(u => u.Active)" Editable="true" />
+        <PulsarDataGridColumn TRow="User" Id="joined" Header="Joined" Field="@(u => u.Joined)" Editable="true" />
+        <PulsarDataGridColumn TRow="User" Id="logins" Header="Logins" Align="PulsarDataGridColumnAlign.End" Field="@(u => u.Logins)" />
+        <PulsarDataGridColumn TRow="User" Id="actions" Header="" Width="72px" Sortable="false" Filterable="false">
+            <CellTemplate Context="user">
+                <PulsarButton Variant="PulsarVariant.Text" Color="PulsarColor.Error" Size="PulsarSize.Small" OnClick="@(() => RemoveUser(user.Id))" aria-label="@($"Remove {user.Name}")">
+                    <StartIcon><PulsarIcon Icon="@PulsarIcons.Outline.Trash" /></StartIcon>
+                </PulsarButton>
+            </CellTemplate>
+        </PulsarDataGridColumn>
+    </PulsarDataGrid>
+</div>
+
+@code {
+    private sealed record User(int Id, string Name, string Email, string Role, bool Active, DateOnly Joined, int Logins);
+
+    private List<User> _users =
+    [
+        new(1, "Ava Nguyen", "ava.nguyen@example.com", "Admin", true, new DateOnly(2024, 2, 11), 342),
+        new(2, "Marcus Bell", "marcus.bell@example.com", "Editor", true, new DateOnly(2024, 5, 3), 128),
+        new(3, "Priya Shah", "priya.shah@example.com", "Viewer", false, new DateOnly(2023, 11, 22), 12),
+        new(4, "Diego Ramos", "diego.ramos@example.com", "Editor", true, new DateOnly(2025, 1, 9), 76),
+        new(5, "Elena Petrova", "elena.petrova@example.com", "Admin", true, new DateOnly(2022, 8, 30), 891),
+        new(6, "Noah Kim", "noah.kim@example.com", "Viewer", true, new DateOnly(2025, 3, 14), 5),
+    ];
+
+    private int _nextId = 7;
+    private string _newName = "";
+    private string _newEmail = "";
+    private string _newRole = "Viewer";
+    private PulsarWindowHandle? _addUserWindow;
+
+    private static string Initials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2 ? $"{parts[0][0]}{parts[^1][0]}" : name[..Math.Min(2, name.Length)];
+    }
+
+    protected override void OnInitialized() => Source.SetPageSource("Admin Table", RawSource);
+
+    // Cell edits mutate the SAME list in place, by index — matches the docs site's own established
+    // pattern. The grid already painted the new value optimistically (an internal override) before
+    // this fires; this call is purely about keeping the C#-side data model in sync for later.
+    private void HandleCellEdit(PulsarDataGridCellEditRequest<User> request)
+    {
+        var index = _users.FindIndex(u => u.Id == request.Row.Id);
+        if (index < 0)
+        {
+            return;
+        }
+
+        _users[index] = request.ColumnId switch
+        {
+            "name" => request.Row with { Name = request.NewValue as string ?? request.Row.Name },
+            "email" => request.Row with { Email = request.NewValue as string ?? request.Row.Email },
+            "role" => request.Row with { Role = request.NewValue as string ?? request.Row.Role },
+            "active" => request.Row with { Active = request.NewValue is bool b ? b : request.Row.Active },
+            "joined" => request.Row with { Joined = request.NewValue is DateOnly d ? d : request.Row.Joined },
+            _ => request.Row,
+        };
+    }
+
+    // Adding/removing a row changes the ROW COUNT, not just a value on an already-rendered cell —
+    // unlike a cell edit (which the grid paints via its own internal override regardless of the
+    // Items reference), this needs the grid to actually reprocess Items, which it only does when
+    // the reference changes (an intentional perf guard against recomputing on every render) — so
+    // this reassigns _users to a new list rather than mutating the existing one in place.
+    private void RemoveUser(int id) => _users = _users.Where(u => u.Id != id).ToList();
+
+    private void OpenAddUser()
+    {
+        _newName = "";
+        _newEmail = "";
+        _newRole = "Viewer";
+        _addUserWindow = Windows.Open(new PulsarWindowOptions
+        {
+            Title = "Add user",
+            Width = 380,
+            Height = 340,
+            MinWidth = 320,
+            MinHeight = 300,
+            Footer = AddUserFooter,
+        }, AddUserContent);
+    }
+
+    private RenderFragment AddUserContent => @<div style="display: flex; flex-direction: column; gap: 12px;">
+        <PulsarTextField @bind-Value="_newName" Label="Full name" FullWidth />
+        <PulsarTextField @bind-Value="_newEmail" Label="Email" FullWidth />
+        <PulsarSelect @bind-Value="_newRole" Label="Role" FullWidth>
+            <PulsarSelectItem Option="@("Admin")" Label="Admin" />
+            <PulsarSelectItem Option="@("Editor")" Label="Editor" />
+            <PulsarSelectItem Option="@("Viewer")" Label="Viewer" />
+        </PulsarSelect>
+    </div>;
+
+    private RenderFragment AddUserFooter => @<PulsarButton Color="PulsarColor.Primary" FullWidth OnClick="ConfirmAddUser">Add user</PulsarButton>;
+
+    private void ConfirmAddUser()
+    {
+        if (string.IsNullOrWhiteSpace(_newName) || string.IsNullOrWhiteSpace(_newEmail))
+        {
+            Toasts.Show(new PulsarToastOptions { Title = "Name and email are required", Color = PulsarColor.Error });
+            return;
+        }
+
+        _users = [.. _users, new User(_nextId++, _newName, _newEmail, _newRole, true, DateOnly.FromDateTime(DateTime.Today), 0)];
+        _addUserWindow?.Close();
+        Toasts.Show(new PulsarToastOptions { Title = "User added", Message = _newName, Color = PulsarColor.Success });
+    }
+
+    private const string RawSource = """
+        @page "/examples/admin-table"
+        @layout ExampleLayout
+        @inject IPulsarToastManager Toasts
+        @inject IPulsarWindowManager Windows
+
+        <PulsarDataGrid TRow="User" Items="@_users" RowKey="@(u => u.Id)" OnCellEdit="HandleCellEdit" StripedRows="true">
+            <PulsarDataGridColumn TRow="User" Id="avatar" Header="" Sortable="false" Filterable="false">
+                <CellTemplate Context="user">
+                    <PulsarAvatar Initials="@Initials(user.Name)" Color="PulsarColor.Primary" Size="PulsarSize.Small" />
+                </CellTemplate>
+            </PulsarDataGridColumn>
+            <PulsarDataGridColumn TRow="User" Id="name" Header="Name" Field="@(u => u.Name)" Editable="true" />
+            <PulsarDataGridColumn TRow="User" Id="email" Header="Email" Field="@(u => u.Email)" Editable="true" />
+            <PulsarDataGridColumn TRow="User" Id="role" Header="Role" Field="@(u => u.Role)" Editable="true">
+                <EditTemplate Context="context">
+                    <PulsarSelect TValue="string" Value="@(context.Value as string)" Size="PulsarSize.Small" FullWidth="true"
+                                  ValueChanged="@((string? v) => context.Commit(v))">
+                        <PulsarSelectItem TValue="string" Option="@("Admin")" />
+                        <PulsarSelectItem TValue="string" Option="@("Editor")" />
+                        <PulsarSelectItem TValue="string" Option="@("Viewer")" />
+                    </PulsarSelect>
+                </EditTemplate>
+            </PulsarDataGridColumn>
+            <PulsarDataGridColumn TRow="User" Id="active" Header="Active" Field="@(u => u.Active)" Editable="true" />
+            <PulsarDataGridColumn TRow="User" Id="joined" Header="Joined" Field="@(u => u.Joined)" Editable="true" />
+            <PulsarDataGridColumn TRow="User" Id="logins" Header="Logins" Field="@(u => u.Logins)" />
+            <PulsarDataGridColumn TRow="User" Id="actions" Header="" Sortable="false" Filterable="false">
+                <CellTemplate Context="user">
+                    <PulsarButton OnClick="@(() => RemoveUser(user.Id))"><PulsarIcon Icon="@PulsarIcons.Outline.Trash" /></PulsarButton>
+                </CellTemplate>
+            </PulsarDataGridColumn>
+        </PulsarDataGrid>
+
+        @code {
+            private sealed record User(int Id, string Name, string Email, string Role, bool Active, DateOnly Joined, int Logins);
+
+            private List<User> _users = [ /* ... */ ];
+
+            // Cell edits mutate the list in place by index — the grid already painted the new value
+            // via its own internal override; this just keeps the C# model in sync.
+            private void HandleCellEdit(PulsarDataGridCellEditRequest<User> request)
+            {
+                var index = _users.FindIndex(u => u.Id == request.Row.Id);
+                _users[index] = request.ColumnId switch
+                {
+                    "name" => request.Row with { Name = request.NewValue as string ?? request.Row.Name },
+                    "active" => request.Row with { Active = request.NewValue is bool b ? b : request.Row.Active },
+                    "joined" => request.Row with { Joined = request.NewValue is DateOnly d ? d : request.Row.Joined },
+                    _ => request.Row,
+                };
+            }
+
+            // Row count changes need a NEW list reference so the grid actually reprocesses Items
+            // (it skips reprocessing when the reference is unchanged, as a perf guard).
+            private void RemoveUser(int id) => _users = _users.Where(u => u.Id != id).ToList();
+        }
+        """;
+}
