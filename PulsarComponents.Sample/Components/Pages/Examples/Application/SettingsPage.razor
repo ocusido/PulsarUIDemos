@@ -1,0 +1,81 @@
+@page "/examples/app/settings"
+@layout ApplicationLayout
+@inject IPulsarToastManager Toasts
+@inject ExampleSourceService Source
+
+<PageTitle>Settings - PulsarComponents Sample</PageTitle>
+
+<PulsarText Variant="PulsarTextVariant.H4">Settings</PulsarText>
+<PulsarText Variant="PulsarTextVariant.Body1" Color="PulsarColor.Neutral">
+    A preferences-style page — a different mix of components than the Contact form: switches, a
+    select, a slider, a color picker.
+</PulsarText>
+
+<PulsarText Variant="PulsarTextVariant.Overline">Notifications</PulsarText>
+<PulsarSwitch @bind-Value="_emailNotifications" Label="Email notifications" />
+<PulsarSwitch @bind-Value="_smsNotifications" Label="SMS notifications" />
+
+<PulsarText Variant="PulsarTextVariant.Overline">Preferences</PulsarText>
+<PulsarSelect @bind-Value="_language" Label="Language" Placeholder="Choose a language">
+    <PulsarSelectItem Option="@("en")" Label="English" />
+    <PulsarSelectItem Option="@("es")" Label="Español" />
+    <PulsarSelectItem Option="@("fr")" Label="Français" />
+</PulsarSelect>
+
+<div class="settings-page__slider-row">
+    <PulsarText Variant="PulsarTextVariant.Body2">Items per page: @_pageSize</PulsarText>
+    <PulsarSlider @bind-Value="_pageSize" Min="10" Max="100" Step="10" />
+</div>
+
+<PulsarText Variant="PulsarTextVariant.Overline">Accent color</PulsarText>
+<PulsarColorPicker @bind-Value="_accentColor" Label="Accent color" />
+
+<PulsarToolbar Gap="8" Style="padding: 0;">
+    <PulsarButton Color="PulsarColor.Primary" OnClick="SavePreferences">Save preferences</PulsarButton>
+</PulsarToolbar>
+
+@code {
+    private bool _emailNotifications = true;
+    private bool _smsNotifications;
+    private string? _language = "en";
+    private double _pageSize = 25;
+    private string? _accentColor = "#4C6FFF";
+
+    protected override void OnInitialized() => Source.SetPageSource("Settings", RawSource);
+
+    private void SavePreferences() =>
+        Toasts.Show(new PulsarToastOptions { Title = "Preferences saved", Color = PulsarColor.Success });
+
+    private const string RawSource = """
+        @page "/examples/app/settings"
+        @layout ApplicationLayout
+        @inject IPulsarToastManager Toasts
+
+        <PulsarSwitch @bind-Value="_emailNotifications" Label="Email notifications" />
+        <PulsarSwitch @bind-Value="_smsNotifications" Label="SMS notifications" />
+
+        <PulsarSelect @bind-Value="_language" Label="Language" Placeholder="Choose a language">
+            <PulsarSelectItem Option="@("en")" Label="English" />
+            <PulsarSelectItem Option="@("es")" Label="Español" />
+            <PulsarSelectItem Option="@("fr")" Label="Français" />
+        </PulsarSelect>
+
+        <PulsarText Variant="PulsarTextVariant.Body2">Items per page: @_pageSize</PulsarText>
+        <PulsarSlider @bind-Value="_pageSize" Min="10" Max="100" Step="10" />
+
+        <PulsarColorPicker @bind-Value="_accentColor" Label="Accent color" />
+
+        <PulsarButton Color="PulsarColor.Primary" OnClick="SavePreferences">Save preferences</PulsarButton>
+
+        @code {
+            private bool _emailNotifications = true;
+            private bool _smsNotifications;
+            private string? _language = "en";
+            private double _pageSize = 25;
+            private string? _accentColor = "#4C6FFF";
+
+            private void SavePreferences() =>
+                Toasts.Show(new PulsarToastOptions { Title = "Preferences saved", Color = PulsarColor.Success });
+        }
+        """;
+}

@@ -1,0 +1,139 @@
+@page "/examples/app/contact"
+@layout ApplicationLayout
+@using System.ComponentModel.DataAnnotations
+@inject IPulsarToastManager Toasts
+@inject ExampleSourceService Source
+
+<PageTitle>Contact Us - PulsarComponents Sample</PageTitle>
+
+<PulsarText Variant="PulsarTextVariant.H4">Contact Us</PulsarText>
+<PulsarText Variant="PulsarTextVariant.Body1" Color="PulsarColor.Neutral">
+    A real <code>EditForm</code> + <code>DataAnnotationsValidator</code> — try submitting empty, or
+    with an invalid email/phone, to see validation.
+</PulsarText>
+
+<div class="contact-page">
+    <EditForm Model="_model" OnValidSubmit="HandleValidSubmit" class="contact-page__form">
+        <DataAnnotationsValidator />
+
+        <PulsarText Variant="PulsarTextVariant.Overline">Your details</PulsarText>
+        <div class="contact-page__row">
+            <PulsarTextField @bind-Value="_model.Name" Label="Full name" FullWidth Style="flex: 1 1 0; min-width: 0;" />
+            <PulsarTextField @bind-Value="_model.Email" Label="Email" FullWidth Style="flex: 1 1 0; min-width: 0;" />
+        </div>
+        <PulsarTextField @bind-Value="_model.Phone" Label="Phone" FullWidth />
+
+        <PulsarText Variant="PulsarTextVariant.Overline">Address</PulsarText>
+        <PulsarTextField @bind-Value="_model.Street" Label="Street" FullWidth />
+        <div class="contact-page__row">
+            <PulsarTextField @bind-Value="_model.City" Label="City" FullWidth Style="flex: 1 1 0; min-width: 0;" />
+            <PulsarTextField @bind-Value="_model.State" Label="State" FullWidth Style="flex: 1 1 0; min-width: 0;" />
+            <PulsarTextField @bind-Value="_model.Zip" Label="ZIP" FullWidth Style="flex: 1 1 0; min-width: 0;" />
+        </div>
+
+        <PulsarText Variant="PulsarTextVariant.Overline">Message</PulsarText>
+        <PulsarDatePicker @bind-Value="_model.PreferredDate" Label="Preferred contact date" MinDate="DateOnly.FromDateTime(DateTime.Today)" />
+        <PulsarTextField @bind-Value="_model.Message" Label="Message" Lines="4" FullWidth />
+
+        <PulsarToolbar Gap="8" Style="padding: 0;">
+            <PulsarButton Type="submit" Color="PulsarColor.Primary">Send message</PulsarButton>
+            <PulsarButton Type="button" Variant="PulsarVariant.Text" OnClick="Reset">Reset</PulsarButton>
+        </PulsarToolbar>
+    </EditForm>
+</div>
+
+@code {
+    private ContactModel _model = new();
+
+    private sealed class ContactModel
+    {
+        [Required(ErrorMessage = "Name is required.")]
+        public string Name { get; set; } = "";
+
+        [Required(ErrorMessage = "Email is required."), EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "Phone is required."), Phone(ErrorMessage = "Enter a valid phone number.")]
+        public string Phone { get; set; } = "";
+
+        [Required(ErrorMessage = "Street is required.")]
+        public string Street { get; set; } = "";
+
+        [Required(ErrorMessage = "City is required.")]
+        public string City { get; set; } = "";
+
+        [Required(ErrorMessage = "State is required.")]
+        public string State { get; set; } = "";
+
+        [Required(ErrorMessage = "ZIP is required."), RegularExpression(@"^\d{5}(-\d{4})?$", ErrorMessage = "Enter a valid ZIP code.")]
+        public string Zip { get; set; } = "";
+
+        public DateOnly? PreferredDate { get; set; }
+
+        public string Message { get; set; } = "";
+    }
+
+    protected override void OnInitialized() => Source.SetPageSource("Contact Us", RawSource);
+
+    private void HandleValidSubmit()
+    {
+        Toasts.Show(new PulsarToastOptions
+        {
+            Title = "Message sent",
+            Message = $"Thanks, {_model.Name} — we'll be in touch.",
+            Color = PulsarColor.Success,
+        });
+        _model = new ContactModel();
+    }
+
+    private void Reset() => _model = new ContactModel();
+
+    private const string RawSource = """
+        @page "/examples/app/contact"
+        @layout ApplicationLayout
+        @using System.ComponentModel.DataAnnotations
+        @inject IPulsarToastManager Toasts
+
+        <EditForm Model="_model" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+
+            <PulsarTextField @bind-Value="_model.Name" Label="Full name" FullWidth />
+            <PulsarTextField @bind-Value="_model.Email" Label="Email" FullWidth />
+            <PulsarTextField @bind-Value="_model.Phone" Label="Phone" FullWidth />
+
+            <PulsarTextField @bind-Value="_model.Street" Label="Street" FullWidth />
+            <PulsarTextField @bind-Value="_model.City" Label="City" FullWidth />
+            <PulsarTextField @bind-Value="_model.State" Label="State" FullWidth />
+            <PulsarTextField @bind-Value="_model.Zip" Label="ZIP" FullWidth />
+
+            <PulsarDatePicker @bind-Value="_model.PreferredDate" Label="Preferred contact date"
+                              MinDate="DateOnly.FromDateTime(DateTime.Today)" />
+            <PulsarTextField @bind-Value="_model.Message" Label="Message" Lines="4" FullWidth />
+
+            <PulsarButton Type="submit" Color="PulsarColor.Primary">Send message</PulsarButton>
+        </EditForm>
+
+        @code {
+            private sealed class ContactModel
+            {
+                [Required] public string Name { get; set; } = "";
+                [Required, EmailAddress] public string Email { get; set; } = "";
+                [Required, Phone] public string Phone { get; set; } = "";
+                [Required] public string Street { get; set; } = "";
+                [Required] public string City { get; set; } = "";
+                [Required] public string State { get; set; } = "";
+                [Required, RegularExpression(@"^\d{5}(-\d{4})?$")] public string Zip { get; set; } = "";
+                public DateOnly? PreferredDate { get; set; }
+                public string Message { get; set; } = "";
+            }
+
+            private ContactModel _model = new();
+
+            private void HandleValidSubmit()
+            {
+                Toasts.Show(new PulsarToastOptions { Title = "Message sent", Color = PulsarColor.Success });
+                _model = new ContactModel();
+            }
+        }
+        """;
+}

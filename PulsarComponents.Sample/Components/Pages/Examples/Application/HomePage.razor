@@ -1,0 +1,74 @@
+@page "/examples/app"
+@layout ApplicationLayout
+@inject ExampleSourceService Source
+
+<PageTitle>Home - PulsarComponents Sample</PageTitle>
+
+<div class="home-page">
+    <PulsarText Variant="PulsarTextVariant.H4">Welcome back, Osmy</PulsarText>
+    <PulsarText Variant="PulsarTextVariant.Body1" Color="PulsarColor.Neutral">
+        This is a small, realistic app shell — a home page, a dashboard, a validated contact form, a
+        calendar, and settings — built entirely with <code>PulsarComponents</code>. Use the nav on the
+        left to look around, and the code icon in the top bar to see any page's own source.
+    </PulsarText>
+
+    <PulsarGrid Spacing="3" Class="home-page__highlights">
+        @foreach (var item in Highlights)
+        {
+            <PulsarGridItem Xs="12" Sm="6" Md="4">
+                <a href="@item.Href" class="home-page__highlight-link">
+                    <PulsarCard Elevation="PulsarElevation.Low" Title="@item.Title" Subtitle="@item.Description">
+                        <HeaderIcon><PulsarIcon Icon="@item.Icon" Color="PulsarColor.Primary" /></HeaderIcon>
+                    </PulsarCard>
+                </a>
+            </PulsarGridItem>
+        }
+    </PulsarGrid>
+</div>
+
+@code {
+    private sealed record Highlight(string Title, string Description, string Icon, string Href);
+
+    private static readonly Highlight[] Highlights =
+    [
+        new("Dashboard", "Stats, tags, quick actions.", PulsarIcons.Outline.LayoutDashboard, "examples/app/dashboard"),
+        new("Contact Us", "A real validated form.", PulsarIcons.Outline.Mail, "examples/app/contact"),
+        new("Calendar", "Scheduled events at a glance.", PulsarIcons.Outline.Calendar, "examples/app/calendar"),
+    ];
+
+    protected override void OnInitialized() => Source.SetPageSource("Home", RawSource);
+
+    private const string RawSource = """
+        @page "/examples/app"
+        @layout ApplicationLayout
+
+        <PulsarText Variant="PulsarTextVariant.H4">Welcome back, Osmy</PulsarText>
+        <PulsarText Variant="PulsarTextVariant.Body1" Color="PulsarColor.Neutral">
+            This is a small, realistic app shell built entirely with PulsarComponents.
+        </PulsarText>
+
+        <PulsarGrid Spacing="3">
+            @foreach (var item in Highlights)
+            {
+                <PulsarGridItem Xs="12" Sm="6" Md="4">
+                    <a href="@item.Href">
+                        <PulsarCard Elevation="PulsarElevation.Low" Title="@item.Title" Subtitle="@item.Description">
+                            <HeaderIcon><PulsarIcon Icon="@item.Icon" Color="PulsarColor.Primary" /></HeaderIcon>
+                        </PulsarCard>
+                    </a>
+                </PulsarGridItem>
+            }
+        </PulsarGrid>
+
+        @code {
+            private sealed record Highlight(string Title, string Description, string Icon, string Href);
+
+            private static readonly Highlight[] Highlights =
+            [
+                new("Dashboard", "Stats, tags, quick actions.", PulsarIcons.Outline.LayoutDashboard, "examples/app/dashboard"),
+                new("Contact Us", "A real validated form.", PulsarIcons.Outline.Mail, "examples/app/contact"),
+                new("Calendar", "Scheduled events at a glance.", PulsarIcons.Outline.Calendar, "examples/app/calendar"),
+            ];
+        }
+        """;
+}

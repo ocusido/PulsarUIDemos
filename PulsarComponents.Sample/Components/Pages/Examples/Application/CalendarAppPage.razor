@@ -1,0 +1,52 @@
+@page "/examples/app/calendar"
+@layout ApplicationLayout
+@inject ExampleSourceService Source
+
+<PageTitle>Calendar - PulsarComponents Sample</PageTitle>
+
+<PulsarText Variant="PulsarTextVariant.H4">Calendar</PulsarText>
+<PulsarText Variant="PulsarTextVariant.Body1" Color="PulsarColor.Neutral">
+    A few sample events on <code>PulsarCalendar</code> — drag one to reschedule it.
+</PulsarText>
+
+<PulsarCalendar Events="_events" Style="height: 620px;" />
+
+@code {
+    private List<PulsarCalendarEvent> _events = [];
+
+    protected override void OnInitialized()
+    {
+        Source.SetPageSource("Calendar", RawSource);
+
+        var today = DateTime.Today;
+        _events =
+        [
+            new() { Title = "Team standup", Start = today.AddHours(9), End = today.AddHours(9).AddMinutes(30), Color = PulsarColor.Primary },
+            new() { Title = "Client call", Start = today.AddDays(1).AddHours(14), End = today.AddDays(1).AddHours(15), Color = PulsarColor.Info },
+            new() { Title = "Product review", Start = today.AddDays(2).AddHours(11), End = today.AddDays(2).AddHours(12), Color = PulsarColor.Success },
+            new() { Title = "Company offsite", Start = today.AddDays(4), End = today.AddDays(6), IsAllDay = true, Color = PulsarColor.Warning },
+        ];
+    }
+
+    private const string RawSource = """
+        @page "/examples/app/calendar"
+        @layout ApplicationLayout
+
+        <PulsarCalendar Events="_events" Style="height: 620px;" />
+
+        @code {
+            private List<PulsarCalendarEvent> _events = [];
+
+            protected override void OnInitialized()
+            {
+                var today = DateTime.Today;
+                _events =
+                [
+                    new() { Title = "Team standup", Start = today.AddHours(9), End = today.AddHours(9).AddMinutes(30) },
+                    new() { Title = "Client call", Start = today.AddDays(1).AddHours(14), End = today.AddDays(1).AddHours(15) },
+                    new() { Title = "Company offsite", Start = today.AddDays(4), End = today.AddDays(6), IsAllDay = true },
+                ];
+            }
+        }
+        """;
+}

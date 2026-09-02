@@ -1,0 +1,123 @@
+@layout ExampleLayout
+@inherits LayoutComponentBase
+@inject ExampleSourceService Source
+
+@* Shared by every page of the "Application" example: the collapsible nav drawer (a Mini
+   PulsarDrawer — collapses to an icon rail instead of vanishing) plus the "view frame source"
+   button at the end of the nav list. Each page below only supplies its own content via @Body. *@
+<div class="app-layout">
+    <PulsarDrawer Variant="PulsarDrawerVariant.Mini" Anchor="PulsarDrawerAnchor.Left"
+                  Open="_navExpanded" Background="PulsarBackground.Surface" Class="app-layout__nav">
+        <MiniContent>
+            <button type="button" class="app-layout__toggle" @onclick="ToggleNav" aria-label="Expand navigation">
+                <PulsarIcon Icon="@PulsarIcons.Outline.ChevronsRight" />
+            </button>
+            @foreach (var item in NavItems)
+            {
+                <NavLink class="app-layout__nav-link app-layout__nav-link--mini" href="@item.Href" Match="@item.Match" title="@item.Label">
+                    <PulsarIcon Icon="@item.Icon" />
+                </NavLink>
+            }
+            <div class="app-layout__spacer"></div>
+            <button type="button" class="app-layout__nav-link app-layout__nav-link--mini" @onclick="Source.OpenFrame" title="View frame source">
+                <PulsarIcon Icon="@PulsarIcons.Outline.FileCode" />
+            </button>
+        </MiniContent>
+        <ChildContent>
+            <button type="button" class="app-layout__toggle app-layout__toggle--expanded" @onclick="ToggleNav" aria-label="Collapse navigation">
+                <PulsarIcon Icon="@PulsarIcons.Outline.ChevronsLeft" />
+                <span>Collapse</span>
+            </button>
+            @foreach (var item in NavItems)
+            {
+                <NavLink class="app-layout__nav-link" href="@item.Href" Match="@item.Match">
+                    <PulsarIcon Icon="@item.Icon" />
+                    @item.Label
+                </NavLink>
+            }
+            <div class="app-layout__spacer"></div>
+            <button type="button" class="app-layout__nav-link app-layout__frame-button" @onclick="Source.OpenFrame">
+                <PulsarIcon Icon="@PulsarIcons.Outline.FileCode" />
+                View frame source
+            </button>
+        </ChildContent>
+    </PulsarDrawer>
+
+    <div class="app-layout__content">
+        @Body
+    </div>
+</div>
+
+@code {
+    private bool _navExpanded = true;
+
+    private void ToggleNav() => _navExpanded = !_navExpanded;
+
+    private sealed record NavItem(string Label, string Href, string Icon, NavLinkMatch Match);
+
+    private static readonly NavItem[] NavItems =
+    [
+        new("Home", "examples/app", PulsarIcons.Outline.Home, NavLinkMatch.All),
+        new("Dashboard", "examples/app/dashboard", PulsarIcons.Outline.LayoutDashboard, NavLinkMatch.Prefix),
+        new("Contact Us", "examples/app/contact", PulsarIcons.Outline.Mail, NavLinkMatch.Prefix),
+        new("Calendar", "examples/app/calendar", PulsarIcons.Outline.Calendar, NavLinkMatch.Prefix),
+        new("Settings", "examples/app/settings", PulsarIcons.Outline.Settings, NavLinkMatch.Prefix),
+    ];
+
+    protected override void OnInitialized() => Source.SetFrameSource("Application Frame", RawFrameSource);
+
+    private const string RawFrameSource = """
+        @layout ExampleLayout
+        @inject ExampleSourceService Source
+
+        <div class="app-layout">
+            <PulsarDrawer Variant="PulsarDrawerVariant.Mini" Anchor="PulsarDrawerAnchor.Left"
+                          Open="_navExpanded" Background="PulsarBackground.Surface">
+                <MiniContent>
+                    <button @onclick="ToggleNav"><PulsarIcon Icon="@PulsarIcons.Outline.ChevronsRight" /></button>
+                    @foreach (var item in NavItems)
+                    {
+                        <NavLink href="@item.Href" Match="@item.Match" title="@item.Label">
+                            <PulsarIcon Icon="@item.Icon" />
+                        </NavLink>
+                    }
+                    <button @onclick="Source.OpenFrame"><PulsarIcon Icon="@PulsarIcons.Outline.FileCode" /></button>
+                </MiniContent>
+                <ChildContent>
+                    <button @onclick="ToggleNav">
+                        <PulsarIcon Icon="@PulsarIcons.Outline.ChevronsLeft" /> Collapse
+                    </button>
+                    @foreach (var item in NavItems)
+                    {
+                        <NavLink href="@item.Href" Match="@item.Match">
+                            <PulsarIcon Icon="@item.Icon" /> @item.Label
+                        </NavLink>
+                    }
+                    <button @onclick="Source.OpenFrame">
+                        <PulsarIcon Icon="@PulsarIcons.Outline.FileCode" /> View frame source
+                    </button>
+                </ChildContent>
+            </PulsarDrawer>
+
+            <div class="app-layout__content">
+                @Body
+            </div>
+        </div>
+
+        @code {
+            private bool _navExpanded = true;
+            private void ToggleNav() => _navExpanded = !_navExpanded;
+
+            private sealed record NavItem(string Label, string Href, string Icon, NavLinkMatch Match);
+
+            private static readonly NavItem[] NavItems =
+            [
+                new("Home", "examples/app", PulsarIcons.Outline.Home, NavLinkMatch.All),
+                new("Dashboard", "examples/app/dashboard", PulsarIcons.Outline.LayoutDashboard, NavLinkMatch.Prefix),
+                new("Contact Us", "examples/app/contact", PulsarIcons.Outline.Mail, NavLinkMatch.Prefix),
+                new("Calendar", "examples/app/calendar", PulsarIcons.Outline.Calendar, NavLinkMatch.Prefix),
+                new("Settings", "examples/app/settings", PulsarIcons.Outline.Settings, NavLinkMatch.Prefix),
+            ];
+        }
+        """;
+}

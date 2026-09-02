@@ -23,10 +23,15 @@
     justify-content: center;
 }
 
+.example-shell ::deep .example-shell__title-separator {
+    color: var(--pulsar-palette-divider, #E4E7EC);
+    font-size: 1.1rem;
+}
+
 /* Fills whatever height the sticky AppBar above it doesn't use. Each example page renders its own
-   drawer+content layout inside here (a Persistent PulsarDrawer expects a display:flex parent to sit
-   correctly beside its content sibling — see DashboardExample.razor.css) — this container just needs
-   to size and hand off scrolling to whatever the page itself provides. */
+   drawer+content layout inside here (a Persistent/Mini PulsarDrawer expects a display:flex parent
+   to sit correctly beside its content sibling — see ApplicationLayout.razor.css) — this container
+   just needs to size and hand off scrolling to whatever the page itself provides. */
 .example-shell ::deep .example-shell__body {
     flex: 1 1 auto;
     min-height: 0;

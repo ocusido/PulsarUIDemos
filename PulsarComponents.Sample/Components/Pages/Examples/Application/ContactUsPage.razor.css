@@ -1,0 +1,11 @@
+.contact-page ::deep .contact-page__form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 640px;
+}
+
+.contact-page__row {
+    display: flex;
+    gap: 12px;
+}

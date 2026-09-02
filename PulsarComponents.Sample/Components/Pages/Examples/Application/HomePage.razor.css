@@ -1,0 +1,10 @@
+.home-page ::deep .home-page__highlights {
+    margin-top: 8px;
+}
+
+.home-page__highlight-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+}

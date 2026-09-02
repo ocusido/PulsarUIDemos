@@ -1,0 +1,6 @@
+.settings-page__slider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 360px;
+}
