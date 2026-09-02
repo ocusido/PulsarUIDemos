@@ -1,80 +1,9 @@
 @inherits LayoutComponentBase
+@inject IPulsarThemeManager ThemeManager
+@implements IDisposable
 
-<PulsarThemeProvider Theme="@(_isDark ? PulsarTheme.Dark : PulsarTheme.Default)">
-    @* A root-level PulsarThemeProvider renders no DOM element of its own (it publishes CSS to
-       :root and passes ChildContent straight through), so a scoped ::deep rule needs a REAL
-       element MainLayout itself directly authors to anchor on — nothing else in this subtree
-       reliably carries this file's own scope attribute otherwise. Same reasoning PulsarWindow.razor
-       already relies on for its own ".pulsar-window ::deep ..." rules. *@
-    <div class="sample-shell">
-        <PulsarAppBar Background="PulsarBackground.Surface" Border="PulsarBorderEdges.Bottom">
-            <ChildContent>
-                <PulsarIcon Icon="@PulsarIcons.Outline.Bolt" Color="PulsarColor.Primary" Size="PulsarSize.Large" />
-                <PulsarText Variant="PulsarTextVariant.H6" Class="sample-shell__brand">PulsarComponents Sample</PulsarText>
-            </ChildContent>
-            <End>
-                <PulsarPopover Placement="PulsarPopoverPlacement.BottomEnd">
-                    <Anchor>
-                        <PulsarButton Variant="PulsarVariant.Text" Color="PulsarColor.Neutral" Class="sample-shell__icon-button" aria-label="Notifications">
-                            <StartIcon>
-                                <PulsarBadge Content="@_notifications.Count.ToString()" Color="PulsarColor.Error">
-                                    <PulsarIcon Icon="@PulsarIcons.Outline.Bell" />
-                                </PulsarBadge>
-                            </StartIcon>
-                        </PulsarButton>
-                    </Anchor>
-                    <Content>
-                        <PulsarPanel Background="PulsarBackground.Surface" Border="PulsarBorderEdges.All" Elevation="PulsarElevation.Medium" Class="sample-shell__menu">
-                            <PulsarText Variant="PulsarTextVariant.Subtitle2" Class="sample-shell__menu-heading">Notifications</PulsarText>
-                            @foreach (var note in _notifications)
-                            {
-                                <PulsarText Variant="PulsarTextVariant.Body2" Class="sample-shell__menu-note">@note</PulsarText>
-                            }
-                        </PulsarPanel>
-                    </Content>
-                </PulsarPopover>
-
-                <PulsarSwitch Value="_isDark" ValueChanged="OnDarkModeChanged" aria-label="Dark mode" />
-
-                <PulsarPopover Placement="PulsarPopoverPlacement.BottomEnd">
-                    <Anchor>
-                        <PulsarAvatar Initials="OC" Color="PulsarColor.Primary" Class="sample-shell__avatar-trigger" />
-                    </Anchor>
-                    <Content>
-                        <PulsarPanel Background="PulsarBackground.Surface" Border="PulsarBorderEdges.All" Elevation="PulsarElevation.Medium" Class="sample-shell__menu">
-                            <PulsarText Variant="PulsarTextVariant.Subtitle2" Class="sample-shell__menu-heading">Osmy Cuba</PulsarText>
-                            <PulsarButton Variant="PulsarVariant.Text" Color="PulsarColor.Neutral" FullWidth Class="sample-shell__menu-item">Profile</PulsarButton>
-                            <PulsarButton Variant="PulsarVariant.Text" Color="PulsarColor.Neutral" FullWidth Class="sample-shell__menu-item">Settings</PulsarButton>
-                            <PulsarButton Variant="PulsarVariant.Text" Color="PulsarColor.Error" FullWidth Class="sample-shell__menu-item">Sign out</PulsarButton>
-                        </PulsarPanel>
-                    </Content>
-                </PulsarPopover>
-            </End>
-        </PulsarAppBar>
-
-        <PulsarPanel Gap="0" Background="PulsarBackground.Background" Class="sample-shell__body">
-            <PulsarPanel Dock="PulsarDock.West" Class="sample-shell__nav" Background="PulsarBackground.Surface" Padding="12" Border="PulsarBorderEdges.Right">
-                <NavLink class="sample-shell__nav-link" href="" Match="NavLinkMatch.All">
-                    <PulsarIcon Icon="@PulsarIcons.Outline.LayoutDashboard" />
-                    Dashboard
-                </NavLink>
-                <NavLink class="sample-shell__nav-link" href="calendar">
-                    <PulsarIcon Icon="@PulsarIcons.Outline.Calendar" />
-                    Calendar
-                </NavLink>
-                <NavLink class="sample-shell__nav-link" href="components">
-                    <PulsarIcon Icon="@PulsarIcons.Outline.Components" />
-                    Components
-                </NavLink>
-            </PulsarPanel>
-
-            <PulsarSplitter For="PulsarDock.West" Min="160" Max="360" OtherMin="360" Key="sample-nav-width" />
-
-            <PulsarPanel Dock="PulsarDock.Fill" Class="sample-shell__content" Background="PulsarBackground.Background" Padding="24" Style="overflow-y: auto;">
-                @Body
-            </PulsarPanel>
-        </PulsarPanel>
-    </div>
+<PulsarThemeProvider Theme="@ThemeManager.CurrentTheme">
+    @Body
 
     <PulsarWindowHost />
     <PulsarToastHost />
@@ -87,14 +16,23 @@
 </div>
 
 @code {
-    private bool _isDark = true;
+    protected override void OnInitialized()
+    {
+        ThemeManager.Changed += HandleThemeChanged;
+    }
 
-    private readonly List<string> _notifications =
-    [
-        "Deploy 0.2.0 finished successfully.",
-        "New comment on \"Q3 roadmap\".",
-        "Weekly usage report is ready.",
-    ];
+    // JS interop (the theme manager's localStorage-backed LoadAsync) needs the circuit attached
+    // first — same reasoning PulsarComponents.Docs' own MainLayout already applies.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ThemeManager.LoadAsync();
+            StateHasChanged();
+        }
+    }
 
-    private void OnDarkModeChanged(bool value) => _isDark = value;
+    private void HandleThemeChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => ThemeManager.Changed -= HandleThemeChanged;
 }

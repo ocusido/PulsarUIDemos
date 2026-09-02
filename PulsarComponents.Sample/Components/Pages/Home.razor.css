@@ -1,0 +1,36 @@
+.gallery {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+
+.gallery__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.gallery ::deep .gallery__title {
+    margin: 0 0 4px;
+}
+
+.gallery ::deep .gallery__tile-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+}
+
+.gallery ::deep .gallery__tile {
+    height: 100%;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.gallery .gallery__tile-link:hover ::deep .gallery__tile {
+    transform: translateY(-2px);
+}
+
+.gallery ::deep .gallery__tile--disabled {
+    opacity: 0.55;
+}

@@ -1,0 +1,50 @@
+/* A Persistent PulsarDrawer renders as a plain in-flow flex sibling (no backdrop) — needs a
+   display:flex parent to sit correctly beside its content sibling, per PulsarDrawer's own docs. */
+.dashboard-example {
+    display: flex;
+    height: 100%;
+}
+
+.dashboard-example ::deep .dashboard-example__nav {
+    flex-shrink: 0;
+    padding: 12px;
+    border-right: 1px solid var(--pulsar-palette-divider, #E4E7EC);
+}
+
+.dashboard-example ::deep .dashboard-example__nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--pulsar-sizing-border-radius-small, 6px);
+    color: var(--pulsar-palette-text-secondary, #5B6270);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.dashboard-example ::deep .dashboard-example__nav-link:hover {
+    background: var(--pulsar-palette-divider, #E4E7EC);
+    color: var(--pulsar-palette-text-primary, #1A1D23);
+}
+
+.dashboard-example ::deep .dashboard-example__nav-link.active {
+    background: color-mix(in srgb, var(--pulsar-palette-primary, #4C6FFF) 14%, transparent);
+    color: var(--pulsar-palette-primary, #4C6FFF);
+}
+
+.dashboard-example ::deep .dashboard-example__content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+    overflow-y: auto;
+}
+
+/* Without this, flex's default flex-shrink:1 proportionally squishes every child to fit the
+   container's own height instead of letting overflow-y:auto above actually scroll. */
+.dashboard-example ::deep .dashboard-example__content > * {
+    flex-shrink: 0;
+}

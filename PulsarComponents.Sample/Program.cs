@@ -1,5 +1,6 @@
 using PulsarComponents;
 using PulsarComponents.Sample.Components;
+using PulsarComponents.Sample.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,8 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddPulsarWindowManager();
 builder.Services.AddPulsarToastManager();
+builder.Services.AddPulsarThemeManager();
+builder.Services.AddScoped<ExampleSourceService>();
 
 var app = builder.Build();
 

@@ -1,0 +1,55 @@
+/* Every rule below needs the ".example-shell" prefix (a real element this component directly
+   renders) for ::deep to have anything to anchor on — see PulsarComponents.Docs' and this repo's
+   own MainLayout precedent for why a bare "::deep .foo" with no scoped ancestor in the DOM is wrong. */
+.example-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.example-shell ::deep .example-shell__brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    text-decoration: none;
+    color: inherit;
+}
+
+.example-shell ::deep .example-shell__icon-button {
+    width: 36px;
+    height: 36px;
+    padding: 0 !important;
+    justify-content: center;
+}
+
+/* Fills whatever height the sticky AppBar above it doesn't use. Each example page renders its own
+   drawer+content layout inside here (a Persistent PulsarDrawer expects a display:flex parent to sit
+   correctly beside its content sibling — see DashboardExample.razor.css) — this container just needs
+   to size and hand off scrolling to whatever the page itself provides. */
+.example-shell ::deep .example-shell__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* The view-source drawer's content — PulsarDrawer's ChildContent has no built-in header/scroll
+   split, so this owns both: a fixed title row and a scrollable code area beneath it. */
+.example-shell ::deep .example-shell__source {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 16px;
+    gap: 12px;
+}
+
+.example-shell ::deep .example-shell__source-title {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.example-shell ::deep .example-shell__source-code {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}

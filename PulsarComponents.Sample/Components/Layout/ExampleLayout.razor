@@ -1,0 +1,97 @@
+@layout MainLayout
+@inherits LayoutComponentBase
+@inject IPulsarThemeManager ThemeManager
+@inject IPulsarWindowManager WindowManager
+@inject ExampleSourceService Source
+@implements IDisposable
+
+@* Shared by every example: brand + dark/light toggle + theme settings + view-source. Each example
+   page supplies its OWN navigation/content below this bar via @Body — see ExampleSourceService's
+   own doc comment for why "which example's source to show" has to travel through a scoped service
+   rather than a CascadingValue (this layout is the PARENT of the routed page, not its descendant). *@
+<div class="example-shell">
+    <PulsarAppBar Background="PulsarBackground.Surface" Border="PulsarBorderEdges.Bottom">
+        <ChildContent>
+            <a href="/" class="example-shell__brand">
+                <PulsarIcon Icon="@PulsarIcons.Outline.Bolt" Color="PulsarColor.Primary" Size="PulsarSize.Large" />
+                <PulsarText Variant="PulsarTextVariant.H6">PulsarComponents Sample</PulsarText>
+            </a>
+        </ChildContent>
+        <End>
+            <PulsarButton Variant="PulsarVariant.Text" Color="PulsarColor.Neutral"
+                          Class="example-shell__icon-button"
+                          OnClick="@(() => _sourceOpen = true)"
+                          aria-label="View source">
+                <StartIcon>
+                    <PulsarIcon Icon="@PulsarIcons.Outline.Code" />
+                </StartIcon>
+            </PulsarButton>
+            <PulsarButton Variant="PulsarVariant.Text" Color="PulsarColor.Neutral"
+                          Class="example-shell__icon-button"
+                          OnClick="OpenThemeSettings"
+                          aria-label="Theme settings">
+                <StartIcon>
+                    <PulsarIcon Icon="@PulsarIcons.Outline.Palette" />
+                </StartIcon>
+            </PulsarButton>
+            <PulsarSwitch Value="IsDark" ValueChanged="OnDarkModeChanged" aria-label="Dark mode" />
+        </End>
+    </PulsarAppBar>
+
+    <div class="example-shell__body">
+        @Body
+    </div>
+
+    @* Nested inside .example-shell (not a sibling) so this scoped CSS's ::deep rules below have a
+       real ancestor with this file's own scope attribute to anchor on — a bare "::deep .foo" with no
+       scoped ancestor in the DOM compiles to a rule with no scope requirement at all rather than
+       matching nothing, which is worse: an accidental global rule instead of an inert one. *@
+    <PulsarDrawer @bind-Open="_sourceOpen" Anchor="PulsarDrawerAnchor.Right" Width="520px">
+        <div class="example-shell__source">
+            <PulsarText Variant="PulsarTextVariant.H6" Class="example-shell__source-title">@(Source.CurrentTitle ?? "Source")</PulsarText>
+            <div class="example-shell__source-code">
+                <PulsarCodeBlock Code="@(Source.CurrentSource ?? string.Empty)" />
+            </div>
+        </div>
+    </PulsarDrawer>
+</div>
+
+@code {
+    private RenderFragment ThemeSettingsContent => @<PulsarThemeSettingsPanel />;
+    private RenderFragment ThemeSettingsFooter => @<PulsarThemeSettingsActions />;
+
+    private bool _sourceOpen;
+
+    private bool IsDark => ThemeManager.Selections.ColorMode == PulsarColorMode.Dark;
+
+    protected override void OnInitialized()
+    {
+        ThemeManager.Changed += HandleChanged;
+        Source.Changed += HandleChanged;
+    }
+
+    private void HandleChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task OnDarkModeChanged(bool value)
+    {
+        ThemeManager.Apply(ThemeManager.Selections with { ColorMode = value ? PulsarColorMode.Dark : PulsarColorMode.Light });
+        await ThemeManager.SaveAsync();
+    }
+
+    private void OpenThemeSettings() =>
+        WindowManager.Open(new PulsarWindowOptions
+        {
+            Title = "Theme Settings",
+            SingletonKey = "pulsar-theme-settings",
+            Width = 601,
+            Height = 801,
+            BodyPadding = "0",
+            Footer = ThemeSettingsFooter,
+        }, ThemeSettingsContent);
+
+    public void Dispose()
+    {
+        ThemeManager.Changed -= HandleChanged;
+        Source.Changed -= HandleChanged;
+    }
+}
