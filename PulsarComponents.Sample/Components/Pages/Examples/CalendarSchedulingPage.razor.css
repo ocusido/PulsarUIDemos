@@ -1,0 +1,15 @@
+.calendar-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 10px;
+    height: 100%;
+    min-height: 0;
+}
+
+.calendar-page__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}

@@ -1,0 +1,299 @@
+@page "/examples/calendar"
+@layout ExampleLayout
+@inject IPulsarToastManager Toasts
+@inject IPulsarWindowManager Windows
+@inject ExampleSourceService Source
+
+<PageTitle>Calendar & Scheduling - PulsarComponents Sample</PageTitle>
+
+<div class="calendar-page">
+    <div class="calendar-page__header">
+        <div>
+            <PulsarText Variant="PulsarTextVariant.H4">Calendar & Scheduling</PulsarText>
+            <PulsarText Variant="PulsarTextVariant.Body1" Color="PulsarColor.Neutral">
+                Drag an event to reschedule it, drag its bottom edge to resize it, click an empty
+                day or time slot to create one, and click an event to edit or delete it — all built
+                into <code>PulsarCalendar</code>, nothing custom-wired.
+            </PulsarText>
+        </div>
+        <PulsarButton Color="PulsarColor.Primary" OnClick="OpenCreateEvent">New event</PulsarButton>
+    </div>
+
+    <PulsarCalendar @bind-View="_view"
+                     @bind-CurrentDate="_currentDate"
+                     Events="_events"
+                     EventClicked="OnEventClicked"
+                     DayClicked="OnDayClicked"
+                     SlotClicked="OnSlotClicked"
+                     EventMoved="OnEventMoved"
+                     EventResized="OnEventResized"
+                     Color="PulsarColor.Primary"
+                     Bordered="true"
+                     Style="flex: 1 1 auto; min-height: 0;" />
+</div>
+
+@code {
+    private PulsarCalendarView _view = PulsarCalendarView.Month;
+    private DateTime _currentDate = DateTime.Today;
+    private List<PulsarCalendarEvent> _events = [];
+    private PulsarWindowHandle? _eventWindow;
+    private PulsarCalendarEvent? _editingEvent;
+
+    private string _formTitle = "";
+    private bool _formAllDay;
+    private DateOnly? _formDate = DateOnly.FromDateTime(DateTime.Today);
+    private DateOnly? _formEndDate = DateOnly.FromDateTime(DateTime.Today);
+    private TimeOnly? _formStartTime = new(9, 0);
+    private TimeOnly? _formEndTime = new(9, 30);
+    private PulsarColor _formColor = PulsarColor.Primary;
+    private string _formLocation = "";
+    private string _formDescription = "";
+
+    protected override void OnInitialized()
+    {
+        Source.SetPageSource("Calendar & Scheduling", RawSource);
+
+        var today = DateTime.Today;
+        _events =
+        [
+            new() { Title = "Team standup", Start = today.AddHours(9), End = today.AddHours(9).AddMinutes(30), Color = PulsarColor.Primary },
+            new() { Title = "Client call", Start = today.AddDays(1).AddHours(14), End = today.AddDays(1).AddHours(15), Color = PulsarColor.Info, Location = "Zoom" },
+            new() { Title = "Product review", Start = today.AddDays(2).AddHours(11), End = today.AddDays(2).AddHours(12).AddMinutes(30), Color = PulsarColor.Success },
+            new() { Title = "1:1 with Priya", Start = today.AddDays(2).AddHours(15), End = today.AddDays(2).AddHours(15).AddMinutes(30), Color = PulsarColor.Primary },
+            new() { Title = "Dentist appointment", Start = today.AddDays(3).AddHours(8), End = today.AddDays(3).AddHours(9), Color = PulsarColor.Warning },
+            new() { Title = "Company offsite", Start = today.AddDays(5), End = today.AddDays(7), IsAllDay = true, Color = PulsarColor.Warning, Location = "Lake Tahoe" },
+        ];
+    }
+
+    private void OpenCreateEvent() => OpenEventWindow(null, DateTime.Today.AddHours(9));
+
+    private void OnDayClicked(DateTime day) => OpenEventWindow(null, day.AddHours(9));
+
+    private void OnSlotClicked(DateTime slot) => OpenEventWindow(null, slot);
+
+    private void OnEventClicked(PulsarCalendarEvent ev) => OpenEventWindow(ev, ev.Start);
+
+    private void OpenEventWindow(PulsarCalendarEvent? existing, DateTime defaultStart)
+    {
+        _editingEvent = existing;
+        _formTitle = existing?.Title ?? "";
+        _formAllDay = existing?.IsAllDay ?? false;
+        _formDate = DateOnly.FromDateTime(existing?.Start ?? defaultStart);
+        // PulsarCalendarEvent.End is EXCLUSIVE at day granularity for all-day events (a 2-day event
+        // spanning Mon-Tue has End = Wed 00:00) — the form's own "End date" picker reads as the
+        // last day the event covers INCLUSIVE, matching how a person actually thinks about a date
+        // range, so it needs the -1/+1 day conversion here and in SaveEvent below.
+        _formEndDate = existing is { IsAllDay: true }
+            ? DateOnly.FromDateTime(existing.End.AddDays(-1))
+            : DateOnly.FromDateTime(existing?.End ?? defaultStart);
+        _formStartTime = TimeOnly.FromDateTime(existing?.Start ?? defaultStart);
+        _formEndTime = TimeOnly.FromDateTime(existing?.End ?? defaultStart.AddMinutes(30));
+        _formColor = existing?.Color ?? PulsarColor.Primary;
+        _formLocation = existing?.Location ?? "";
+        _formDescription = existing?.Description ?? "";
+
+        _eventWindow = Windows.Open(new PulsarWindowOptions
+        {
+            Title = existing is null ? "New event" : "Edit event",
+            Width = 460,
+            Height = 620,
+            MinWidth = 380,
+            MinHeight = 480,
+            Footer = EventFormFooter,
+        }, EventFormContent);
+    }
+
+    private RenderFragment EventFormContent => @<div style="display: flex; flex-direction: column; gap: 12px;">
+        <PulsarTextField @bind-Value="_formTitle" Label="Title" FullWidth />
+        <PulsarSwitch @bind-Value="_formAllDay" Label="All-day" />
+        @if (_formAllDay)
+        {
+            <div style="display: flex; gap: 12px;">
+                <PulsarDatePicker @bind-Value="_formDate" Label="Start date" FullWidth Style="flex: 1 1 0; min-width: 0;" />
+                <PulsarDatePicker @bind-Value="_formEndDate" Label="End date" FullWidth Style="flex: 1 1 0; min-width: 0;" />
+            </div>
+        }
+        else
+        {
+            <PulsarDatePicker @bind-Value="_formDate" Label="Date" FullWidth />
+            <div style="display: flex; gap: 12px;">
+                <PulsarTimePicker @bind-Value="_formStartTime" Label="Start time" FullWidth Style="flex: 1 1 0; min-width: 0;" />
+                <PulsarTimePicker @bind-Value="_formEndTime" Label="End time" FullWidth Style="flex: 1 1 0; min-width: 0;" />
+            </div>
+        }
+        <PulsarSelect @bind-Value="_formColor" Label="Color" FullWidth>
+            <PulsarSelectItem Option="PulsarColor.Primary" Label="Primary" />
+            <PulsarSelectItem Option="PulsarColor.Info" Label="Info" />
+            <PulsarSelectItem Option="PulsarColor.Success" Label="Success" />
+            <PulsarSelectItem Option="PulsarColor.Warning" Label="Warning" />
+            <PulsarSelectItem Option="PulsarColor.Error" Label="Error" />
+        </PulsarSelect>
+        <PulsarTextField @bind-Value="_formLocation" Label="Location" FullWidth />
+        <PulsarTextField @bind-Value="_formDescription" Label="Description" Lines="3" FullWidth />
+    </div>;
+
+    private RenderFragment EventFormFooter => @<div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+        @if (_editingEvent is not null)
+        {
+            <PulsarButton Variant="PulsarVariant.Text" Color="PulsarColor.Error" OnClick="DeleteEvent">Delete</PulsarButton>
+        }
+        <div style="flex: 1 1 auto;"></div>
+        <PulsarButton Variant="PulsarVariant.Text" OnClick="@(() => _eventWindow?.Close())">Cancel</PulsarButton>
+        <PulsarButton Color="PulsarColor.Primary" OnClick="SaveEvent">Save</PulsarButton>
+    </div>;
+
+    private void SaveEvent()
+    {
+        if (string.IsNullOrWhiteSpace(_formTitle))
+        {
+            Toasts.Show(new PulsarToastOptions { Title = "Title is required", Color = PulsarColor.Error });
+            return;
+        }
+
+        var date = _formDate ?? DateOnly.FromDateTime(DateTime.Today);
+        DateTime start;
+        DateTime end;
+        if (_formAllDay)
+        {
+            start = date.ToDateTime(TimeOnly.MinValue);
+            // +1 day: converts the picker's inclusive last day back to the model's exclusive
+            // end-of-range boundary — see the matching comment in OpenEventWindow.
+            end = (_formEndDate ?? date).AddDays(1).ToDateTime(TimeOnly.MinValue);
+        }
+        else
+        {
+            var startTime = _formStartTime ?? new TimeOnly(9, 0);
+            var endTime = _formEndTime ?? startTime.AddMinutes(30);
+            start = date.ToDateTime(startTime);
+            end = date.ToDateTime(endTime);
+        }
+
+        var location = string.IsNullOrWhiteSpace(_formLocation) ? null : _formLocation;
+        var description = string.IsNullOrWhiteSpace(_formDescription) ? null : _formDescription;
+
+        if (_editingEvent is null)
+        {
+            _events =
+            [
+                .. _events,
+                new PulsarCalendarEvent
+                {
+                    Title = _formTitle,
+                    Start = start,
+                    End = end,
+                    IsAllDay = _formAllDay,
+                    Color = _formColor,
+                    Location = location,
+                    Description = description,
+                },
+            ];
+            Toasts.Show(new PulsarToastOptions { Title = "Event created", Message = _formTitle, Color = PulsarColor.Success });
+        }
+        else
+        {
+            _editingEvent.Title = _formTitle;
+            _editingEvent.Start = start;
+            _editingEvent.End = end;
+            _editingEvent.IsAllDay = _formAllDay;
+            _editingEvent.Color = _formColor;
+            _editingEvent.Location = location;
+            _editingEvent.Description = description;
+            _events = [.. _events];
+            Toasts.Show(new PulsarToastOptions { Title = "Event updated", Message = _formTitle, Color = PulsarColor.Success });
+        }
+
+        _eventWindow?.Close();
+    }
+
+    private void DeleteEvent()
+    {
+        if (_editingEvent is null)
+        {
+            return;
+        }
+
+        _events = _events.Where(e => !Equals(e.Id, _editingEvent.Id)).ToList();
+        _eventWindow?.Close();
+        Toasts.Show(new PulsarToastOptions { Title = "Event deleted", Color = PulsarColor.Neutral });
+    }
+
+    // Both handlers mutate the SAME event instance in place — matches PulsarCalendar's own docs
+    // demo pattern. The calendar already painted the move/resize optimistically; this just keeps
+    // the event's own Start/End in sync so it doesn't snap back on the next render.
+    private void OnEventMoved((PulsarCalendarEvent Event, DateTime NewStart) m)
+    {
+        var duration = m.Event.End - m.Event.Start;
+        m.Event.Start = m.NewStart;
+        m.Event.End = m.NewStart + duration;
+        Toasts.Show(new PulsarToastOptions { Title = "Event rescheduled", Message = m.Event.Title, Color = PulsarColor.Info });
+    }
+
+    private void OnEventResized((PulsarCalendarEvent Event, DateTime NewEnd) r) => r.Event.End = r.NewEnd;
+
+    private const string RawSource = """
+        @page "/examples/calendar"
+        @layout ExampleLayout
+        @inject IPulsarToastManager Toasts
+        @inject IPulsarWindowManager Windows
+
+        <PulsarCalendar @bind-View="_view" @bind-CurrentDate="_currentDate" Events="_events"
+                        EventClicked="OnEventClicked" DayClicked="OnDayClicked" SlotClicked="OnSlotClicked"
+                        EventMoved="OnEventMoved" EventResized="OnEventResized"
+                        Style="flex: 1 1 auto; min-height: 0;" />
+
+        @code {
+            private PulsarCalendarView _view = PulsarCalendarView.Month;
+            private DateTime _currentDate = DateTime.Today;
+            private List<PulsarCalendarEvent> _events = [ /* ... */ ];
+            private PulsarWindowHandle? _eventWindow;
+            private PulsarCalendarEvent? _editingEvent;
+
+            // Empty day/slot click or an existing event click all funnel through the same window —
+            // null "existing" means create, non-null means edit (adds a Delete button to the footer).
+            private void OnDayClicked(DateTime day) => OpenEventWindow(null, day.AddHours(9));
+            private void OnSlotClicked(DateTime slot) => OpenEventWindow(null, slot);
+            private void OnEventClicked(PulsarCalendarEvent ev) => OpenEventWindow(ev, ev.Start);
+
+            private void OpenEventWindow(PulsarCalendarEvent? existing, DateTime defaultStart)
+            {
+                _editingEvent = existing;
+                // ...seed form fields from `existing` or `defaultStart`...
+                _eventWindow = Windows.Open(new PulsarWindowOptions
+                {
+                    Title = existing is null ? "New event" : "Edit event",
+                    Width = 460,
+                    Height = 620,
+                    Footer = EventFormFooter,
+                }, EventFormContent);
+            }
+
+            private void SaveEvent()
+            {
+                // ...build `start`/`end` from the form fields...
+                if (_editingEvent is null)
+                {
+                    _events = [.. _events, new PulsarCalendarEvent { Title = _formTitle, Start = start, End = end }];
+                }
+                else
+                {
+                    _editingEvent.Title = _formTitle;
+                    _editingEvent.Start = start;
+                    _editingEvent.End = end;
+                    _events = [.. _events]; // new list reference in case the calendar gates on it
+                }
+                _eventWindow?.Close();
+            }
+
+            // Both mutate the SAME event instance in place — the calendar already painted the
+            // move/resize optimistically; this just keeps Start/End in sync so it doesn't snap back.
+            private void OnEventMoved((PulsarCalendarEvent Event, DateTime NewStart) m)
+            {
+                var duration = m.Event.End - m.Event.Start;
+                m.Event.Start = m.NewStart;
+                m.Event.End = m.NewStart + duration;
+            }
+
+            private void OnEventResized((PulsarCalendarEvent Event, DateTime NewEnd) r) => r.Event.End = r.NewEnd;
+        }
+        """;
+}

@@ -40,7 +40,14 @@
                     <PulsarIcon Icon="@PulsarIcons.Outline.Palette" />
                 </StartIcon>
             </PulsarButton>
-            <PulsarSwitch Value="IsDark" ValueChanged="OnDarkModeChanged" aria-label="Dark mode" />
+            <PulsarButton Variant="PulsarVariant.Text" Color="PulsarColor.Neutral"
+                          Class="example-shell__icon-button"
+                          OnClick="ToggleColorMode"
+                          aria-label="@(IsDark ? "Switch to light mode" : "Switch to dark mode")">
+                <StartIcon>
+                    <PulsarIcon Icon="@(IsDark ? PulsarIcons.Outline.Moon : PulsarIcons.Outline.Sun)" />
+                </StartIcon>
+            </PulsarButton>
         </End>
     </PulsarAppBar>
 
@@ -90,9 +97,9 @@
         }
     }
 
-    private async Task OnDarkModeChanged(bool value)
+    private async Task ToggleColorMode()
     {
-        ThemeManager.Apply(ThemeManager.Selections with { ColorMode = value ? PulsarColorMode.Dark : PulsarColorMode.Light });
+        ThemeManager.Apply(ThemeManager.Selections with { ColorMode = IsDark ? PulsarColorMode.Light : PulsarColorMode.Dark });
         await ThemeManager.SaveAsync();
     }
 
