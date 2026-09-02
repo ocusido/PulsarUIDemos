@@ -1,0 +1,643 @@
+@page "/examples/settings-forms"
+@layout ExampleLayout
+@using System.ComponentModel.DataAnnotations
+@inject IPulsarToastManager Toasts
+@inject ExampleSourceService Source
+
+<PageTitle>Settings & Forms - PulsarComponents Sample</PageTitle>
+
+<div class="settings-forms-page">
+    <div>
+        <PulsarText Variant="PulsarTextVariant.H4">Settings & Forms</PulsarText>
+        <PulsarText Variant="PulsarTextVariant.Body1" Color="PulsarColor.Neutral">
+            One tab per field type <code>PulsarComponents</code> ships, each a real
+            <code>EditForm</code> + <code>DataAnnotationsValidator</code> — try submitting empty.
+        </PulsarText>
+    </div>
+
+    <PulsarTabs ActiveIndex="_activeTab" ActiveIndexChanged="OnTabChanged">
+        <PulsarTab Title="Text Fields">
+            <EditForm Model="_textModel" OnValidSubmit="OnTextSubmit">
+                <DataAnnotationsValidator />
+                <div class="settings-forms-page__form">
+                    <PulsarTextField @bind-Value="_textModel.Name" Label="Full name" FullWidth />
+                    <PulsarTextField @bind-Value="_textModel.Email" Label="Email" InputType="email" FullWidth />
+                    <PulsarTextField @bind-Value="_textModel.Bio" Label="Bio" Lines="3" FullWidth />
+                    <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+                    @if (_textAlertVisible)
+                    {
+                        <PulsarAlert Color="PulsarColor.Success" Title="Profile saved" OnClose="@(() => _textAlertVisible = false)">
+                            @_textModel.Name &lt;@_textModel.Email&gt;
+                        </PulsarAlert>
+                    }
+                </div>
+            </EditForm>
+        </PulsarTab>
+
+        <PulsarTab Title="Numbers">
+            <EditForm Model="_numbersModel" OnValidSubmit="@(() => Toasts.Show(new PulsarToastOptions { Title = "Order updated", Message = $"{_numbersModel.Quantity} x ${_numbersModel.Price}", Color = PulsarColor.Success }))">
+                <DataAnnotationsValidator />
+                <div class="settings-forms-page__form">
+                    <PulsarNumberField @bind-Value="_numbersModel.Quantity" Label="Quantity" Min="1" Max="999" FullWidth />
+                    <PulsarNumberField @bind-Value="_numbersModel.Price" Label="Unit price" Format="PulsarNumberFieldFormat.Currency" DecimalPlaces="2" FullWidth />
+                    <PulsarButton Color="PulsarColor.Primary" Type="submit">Update order</PulsarButton>
+                </div>
+            </EditForm>
+        </PulsarTab>
+
+        <PulsarTab Title="Select & Radio">
+            <EditForm Model="_choiceModel" OnValidSubmit="@(() => Toasts.Show(new PulsarToastOptions { Title = "Preferences saved", Message = $"{_choiceModel.Plan} / {_choiceModel.Role}", Color = PulsarColor.Success }))">
+                <DataAnnotationsValidator />
+                <div class="settings-forms-page__form">
+                    <PulsarSelect @bind-Value="_choiceModel.Plan" Label="Plan" Placeholder="Choose a plan" FullWidth>
+                        <PulsarSelectItem Option="@("free")" Label="Free" />
+                        <PulsarSelectItem Option="@("pro")" Label="Pro" />
+                        <PulsarSelectItem Option="@("enterprise")" Label="Enterprise" />
+                    </PulsarSelect>
+                    <PulsarRadioGroup @bind-Value="_choiceModel.Role" Label="Role">
+                        <PulsarRadio Option="@("admin")" Label="Admin" />
+                        <PulsarRadio Option="@("editor")" Label="Editor" />
+                        <PulsarRadio Option="@("viewer")" Label="Viewer" />
+                    </PulsarRadioGroup>
+                    <PulsarButton Color="PulsarColor.Primary" Type="submit">Save preferences</PulsarButton>
+                </div>
+            </EditForm>
+        </PulsarTab>
+
+        <PulsarTab Title="Checkboxes & Switches">
+            <EditForm Model="_toggleModel" OnValidSubmit="@(() => Toasts.Show(new PulsarToastOptions { Title = "Settings saved", Color = PulsarColor.Success }))">
+                <DataAnnotationsValidator />
+                <div class="settings-forms-page__form">
+                    <PulsarCheckbox @bind-Value="_toggleModel.AcceptTerms" Label="I accept the terms of service" />
+                    <PulsarSwitch @bind-Value="_toggleModel.Notifications" Label="Email notifications" />
+                    <PulsarButton Color="PulsarColor.Primary" Type="submit">Save settings</PulsarButton>
+                </div>
+            </EditForm>
+        </PulsarTab>
+
+        <PulsarTab Title="Segmented & Toggle">
+            <div class="settings-forms-page__form">
+                <EditForm Model="_segmentedModel" OnValidSubmit="@(() => Toasts.Show(new PulsarToastOptions { Title = "Billing cycle saved", Message = _segmentedModel.Billing ?? "", Color = PulsarColor.Success }))">
+                    <DataAnnotationsValidator />
+                    <div class="settings-forms-page__form">
+                        <PulsarSegmented @bind-Value="_segmentedModel.Billing" Label="Billing cycle">
+                            <PulsarSegmentedItem Option="@("Monthly")" Label="Monthly" />
+                            <PulsarSegmentedItem Option="@("Yearly")" Label="Yearly" />
+                        </PulsarSegmented>
+                        <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+                    </div>
+                </EditForm>
+                <div>
+                    <PulsarText Variant="PulsarTextVariant.Body2">View</PulsarText>
+                    <PulsarButtonGroup Toggle="true" Variant="PulsarVariant.Outlined" @bind-Value="_view">
+                        <PulsarButton Value="Day">Day</PulsarButton>
+                        <PulsarButton Value="Week">Week</PulsarButton>
+                        <PulsarButton Value="Month">Month</PulsarButton>
+                    </PulsarButtonGroup>
+                    <PulsarText Variant="PulsarTextVariant.Caption" Color="PulsarColor.Neutral">
+                        Toggle-mode <code>PulsarButtonGroup</code> doesn't plug into <code>EditForm</code> — it's plain <code>@@bind-Value</code> state, not a validated field.
+                    </PulsarText>
+                </div>
+            </div>
+        </PulsarTab>
+
+        <PulsarTab Title="Autocomplete">
+            <div class="settings-forms-page__form">
+                <EditForm Model="_autocompleteModel" OnValidSubmit="@(() => Toasts.Show(new PulsarToastOptions { Title = "Country saved", Message = _autocompleteModel.Country ?? "", Color = PulsarColor.Success }))">
+                    <DataAnnotationsValidator />
+                    <div class="settings-forms-page__form">
+                        <PulsarAutocomplete @bind-Value="_autocompleteModel.Country" Items="Countries" Label="Country" Clearable="true" FullWidth />
+                        <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+                    </div>
+                </EditForm>
+                <PulsarAutocomplete @bind-Value="_tag" Items="@(Array.Empty<string>())" AllowCustomValue="true" Label="Add a tag (free text)" FullWidth />
+            </div>
+        </PulsarTab>
+
+        <PulsarTab Title="Sliders">
+            <div class="settings-forms-page__form">
+                <EditForm Model="_slidersModel" OnValidSubmit="@(() => Toasts.Show(new PulsarToastOptions { Title = "Volume saved", Message = $"{_slidersModel.Volume:0}%", Color = PulsarColor.Success }))">
+                    <DataAnnotationsValidator />
+                    <div class="settings-forms-page__form">
+                        <PulsarText Variant="PulsarTextVariant.Body2">Volume</PulsarText>
+                        <PulsarSlider @bind-Value="_slidersModel.Volume" Min="0" Max="100" ShowValueLabel="PulsarSliderValueLabelDisplay.On" Style="margin-top: 32px;" />
+                        <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+                    </div>
+                </EditForm>
+                <div>
+                    <PulsarText Variant="PulsarTextVariant.Body2">Price range</PulsarText>
+                    <PulsarSlider Range="true" @bind-LowerValue="_priceLower" @bind-UpperValue="_priceUpper" Min="0" Max="500"
+                                  ShowValueLabel="PulsarSliderValueLabelDisplay.On" Style="margin-top: 32px;" />
+                </div>
+            </div>
+        </PulsarTab>
+
+        <PulsarTab Title="Date Pickers">
+            <div class="settings-forms-page__form">
+                <EditForm Model="_datePickersModel" OnValidSubmit="@(() => Toasts.Show(new PulsarToastOptions { Title = "Start date saved", Message = _datePickersModel.StartDate?.ToString("d") ?? "", Color = PulsarColor.Success }))">
+                    <DataAnnotationsValidator />
+                    <div class="settings-forms-page__form">
+                        <PulsarDatePicker @bind-Value="_datePickersModel.StartDate" Label="Start date" FullWidth />
+                        <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+                    </div>
+                </EditForm>
+                <PulsarDateSelector @bind-Value="_meetingDate" Label="Meeting date" />
+            </div>
+        </PulsarTab>
+
+        <PulsarTab Title="Time Pickers">
+            <div class="settings-forms-page__form">
+                <EditForm Model="_timePickersModel" OnValidSubmit="@(() => Toasts.Show(new PulsarToastOptions { Title = "Meeting time saved", Message = _timePickersModel.MeetingTime?.ToString("t") ?? "", Color = PulsarColor.Success }))">
+                    <DataAnnotationsValidator />
+                    <div class="settings-forms-page__form">
+                        <PulsarTimePicker @bind-Value="_timePickersModel.MeetingTime" Label="Meeting time" FullWidth />
+                        <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+                    </div>
+                </EditForm>
+                <PulsarTimeSelector Value="@_referenceTime" PickerStyle="PulsarTimeSelectorStyle.Clock" />
+            </div>
+        </PulsarTab>
+
+        <PulsarTab Title="Date & Time Range">
+            <EditForm Model="_rangeModel" OnValidSubmit="@(() => Toasts.Show(new PulsarToastOptions { Title = "Trip saved", Color = PulsarColor.Success }))">
+                <DataAnnotationsValidator />
+                <div class="settings-forms-page__form">
+                    <PulsarDateRangePicker @bind-Value="_rangeModel.Vacation" Label="Vacation" FullWidth />
+                    <PulsarDateRangeSelector @bind-Value="_rangeModel.Vacation" Label="Same range, always-visible" />
+                    <PulsarDateTimePicker @bind-Value="_rangeModel.Appointment" Label="Departure" FullWidth />
+                    <PulsarButton Color="PulsarColor.Primary" Type="submit">Save trip</PulsarButton>
+                    <PulsarText Variant="PulsarTextVariant.Caption" Color="PulsarColor.Neutral">
+                        <code>PulsarDateRange</code>/<code>PulsarDateTime</code> are non-nullable structs, so a bare <code>[Required]</code> can't
+                        detect an empty one — this model implements <code>IValidatableObject</code> and checks <code>IsEmpty</code> instead.
+                    </PulsarText>
+                </div>
+            </EditForm>
+        </PulsarTab>
+
+        <PulsarTab Title="Colors">
+            <div class="settings-forms-page__form">
+                <EditForm Model="_colorsModel" OnValidSubmit="@(() => Toasts.Show(new PulsarToastOptions { Title = "Accent color saved", Message = _colorsModel.AccentColor ?? "", Color = PulsarColor.Success }))">
+                    <DataAnnotationsValidator />
+                    <div class="settings-forms-page__form">
+                        <PulsarColorPicker @bind-Value="_colorsModel.AccentColor" Label="Accent color" FullWidth />
+                        <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+                    </div>
+                </EditForm>
+                <PulsarColorSelector Value="@_paletteColor" ValueChanged="@((string? v) => _paletteColor = v)" SpectrumStyle="PulsarColorSelectorSpectrumStyle.Swatches" Label="Palette" FullWidth />
+                <div>
+                    <PulsarSwatchGroup @bind-Value="_swatch" Label="Quick pick">
+                        <PulsarSwatch Option="@("blue")" Hex="#0D6EFD" Label="Blue" />
+                        <PulsarSwatch Option="@("purple")" Hex="#9C36B5" Label="Purple" />
+                        <PulsarSwatch Option="@("teal")" Hex="#0CA678" Label="Teal" />
+                        <PulsarSwatch Option="@("orange")" Hex="#F76707" Label="Orange" />
+                    </PulsarSwatchGroup>
+                    <PulsarText Variant="PulsarTextVariant.Caption" Color="PulsarColor.Neutral">
+                        <code>PulsarSwatchGroup</code> is plain <code>@@bind-Value</code> too — no <code>EditForm</code>/<code>[Required]</code> support yet.
+                    </PulsarText>
+                </div>
+            </div>
+        </PulsarTab>
+    </PulsarTabs>
+</div>
+
+@code {
+    private int _activeTab;
+
+    private readonly TextFieldsModel _textModel = new();
+    private bool _textAlertVisible;
+    private readonly NumbersModel _numbersModel = new();
+    private readonly ChoiceModel _choiceModel = new();
+    private readonly ToggleModel _toggleModel = new() { Notifications = true };
+    private readonly SegmentedModel _segmentedModel = new();
+    private string? _view = "Week";
+    private readonly AutocompleteModel _autocompleteModel = new();
+    private string? _tag;
+    private readonly SlidersModel _slidersModel = new();
+    private double _priceLower = 50;
+    private double _priceUpper = 250;
+    private readonly DatePickersModel _datePickersModel = new();
+    private DateOnly? _meetingDate = DateOnly.FromDateTime(DateTime.Today);
+    private readonly TimePickersModel _timePickersModel = new();
+    private readonly TimeOnly _referenceTime = new(14, 30);
+    private readonly RangeModel _rangeModel = new();
+    private readonly ColorsModel _colorsModel = new() { AccentColor = "#4C6FFF" };
+    private string? _paletteColor = "#4C6FFF";
+    private string? _swatch = "blue";
+
+    private static readonly string[] Countries = ["United States", "Canada", "United Kingdom", "Germany", "France", "Japan", "Australia", "Brazil"];
+
+    private sealed class TextFieldsModel
+    {
+        [Required(ErrorMessage = "Name is required")]
+        public string? Name { get; set; }
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Enter a valid email")]
+        public string? Email { get; set; }
+
+        [StringLength(200, ErrorMessage = "Keep it under 200 characters")]
+        public string? Bio { get; set; }
+    }
+
+    private sealed class NumbersModel
+    {
+        [Range(1, 999, ErrorMessage = "Quantity must be between 1 and 999")]
+        public int Quantity { get; set; } = 1;
+
+        [Range(0.01, 100000, ErrorMessage = "Enter a price greater than 0")]
+        public decimal Price { get; set; } = 9.99m;
+    }
+
+    private sealed class ChoiceModel
+    {
+        [Required(ErrorMessage = "Choose a plan")]
+        public string? Plan { get; set; }
+
+        [Required(ErrorMessage = "Choose a role")]
+        public string? Role { get; set; }
+    }
+
+    private sealed class ToggleModel
+    {
+        [Range(typeof(bool), "true", "true", ErrorMessage = "You must accept the terms")]
+        public bool AcceptTerms { get; set; }
+
+        public bool Notifications { get; set; }
+    }
+
+    private sealed class SegmentedModel
+    {
+        [Required(ErrorMessage = "Choose a billing cycle")]
+        public string? Billing { get; set; }
+    }
+
+    private sealed class AutocompleteModel
+    {
+        [Required(ErrorMessage = "Choose a country")]
+        public string? Country { get; set; }
+    }
+
+    private sealed class SlidersModel
+    {
+        public double Volume { get; set; } = 50;
+    }
+
+    private sealed class DatePickersModel
+    {
+        [Required(ErrorMessage = "Pick a start date")]
+        public DateOnly? StartDate { get; set; }
+    }
+
+    private sealed class TimePickersModel
+    {
+        [Required(ErrorMessage = "Pick a time")]
+        public TimeOnly? MeetingTime { get; set; }
+    }
+
+    // PulsarDateRange/PulsarDateTime are non-nullable structs, so a bare [Required] can't detect
+    // an empty one (the standard DataAnnotations null-only limitation) — IValidatableObject +
+    // IsEmpty is the documented workaround (see PulsarDateRangePicker's own docs demo).
+    private sealed class RangeModel : IValidatableObject
+    {
+        public PulsarDateRange Vacation { get; set; }
+        public PulsarDateTime Appointment { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (Vacation.IsEmpty)
+            {
+                yield return new ValidationResult("Vacation dates are required.", [nameof(Vacation)]);
+            }
+
+            if (Appointment.IsEmpty)
+            {
+                yield return new ValidationResult("Departure date and time are required.", [nameof(Appointment)]);
+            }
+        }
+    }
+
+    private sealed class ColorsModel
+    {
+        [Required(ErrorMessage = "Pick an accent color")]
+        public string? AccentColor { get; set; }
+    }
+
+    private static readonly (string Title, string Code)[] TabSources =
+    [
+        ("Text Fields", TextFieldsCode),
+        ("Numbers", NumbersCode),
+        ("Select & Radio", SelectRadioCode),
+        ("Checkboxes & Switches", CheckboxesSwitchesCode),
+        ("Segmented & Toggle", SegmentedToggleCode),
+        ("Autocomplete", AutocompleteCode),
+        ("Sliders", SlidersCode),
+        ("Date Pickers", DatePickersCode),
+        ("Time Pickers", TimePickersCode),
+        ("Date & Time Range", DateTimeRangeCode),
+        ("Colors", ColorsCode),
+    ];
+
+    protected override void OnInitialized() => SetTabSource(_activeTab);
+
+    private void OnTabChanged(int index)
+    {
+        _activeTab = index;
+        SetTabSource(index);
+    }
+
+    private void SetTabSource(int index)
+    {
+        var (title, code) = TabSources[index];
+        Source.SetPageSource($"Settings & Forms — {title}", code);
+    }
+
+    private void OnTextSubmit()
+    {
+        _textAlertVisible = true;
+        Toasts.Show(new PulsarToastOptions { Title = "Profile saved", Message = _textModel.Name ?? "", Color = PulsarColor.Success });
+    }
+
+    private const string TextFieldsCode = """
+        @using System.ComponentModel.DataAnnotations
+
+        <EditForm Model="_model" OnValidSubmit="OnSubmit">
+            <DataAnnotationsValidator />
+            <PulsarTextField @bind-Value="_model.Name" Label="Full name" FullWidth />
+            <PulsarTextField @bind-Value="_model.Email" Label="Email" InputType="email" FullWidth />
+            <PulsarTextField @bind-Value="_model.Bio" Label="Bio" Lines="3" FullWidth />
+            <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+        </EditForm>
+
+        @code {
+            private sealed class Model
+            {
+                [Required(ErrorMessage = "Name is required")]
+                public string? Name { get; set; }
+
+                [Required(ErrorMessage = "Email is required")]
+                [EmailAddress(ErrorMessage = "Enter a valid email")]
+                public string? Email { get; set; }
+
+                [StringLength(200)]
+                public string? Bio { get; set; }
+            }
+
+            private readonly Model _model = new();
+        }
+        """;
+
+    private const string NumbersCode = """
+        <EditForm Model="_model" OnValidSubmit="OnSubmit">
+            <DataAnnotationsValidator />
+            <PulsarNumberField @bind-Value="_model.Quantity" Label="Quantity" Min="1" Max="999" />
+            <PulsarNumberField @bind-Value="_model.Price" Label="Unit price"
+                               Format="PulsarNumberFieldFormat.Currency" DecimalPlaces="2" />
+            <PulsarButton Color="PulsarColor.Primary" Type="submit">Update order</PulsarButton>
+        </EditForm>
+
+        @code {
+            private sealed class Model
+            {
+                [Range(1, 999)]
+                public int Quantity { get; set; } = 1;
+
+                [Range(0.01, 100000)]
+                public decimal Price { get; set; }
+            }
+
+            private readonly Model _model = new();
+        }
+        """;
+
+    private const string SelectRadioCode = """
+        <EditForm Model="_model" OnValidSubmit="OnSubmit">
+            <DataAnnotationsValidator />
+            <PulsarSelect @bind-Value="_model.Plan" Label="Plan" Placeholder="Choose a plan">
+                <PulsarSelectItem Option="@("free")" Label="Free" />
+                <PulsarSelectItem Option="@("pro")" Label="Pro" />
+                <PulsarSelectItem Option="@("enterprise")" Label="Enterprise" />
+            </PulsarSelect>
+            <PulsarRadioGroup @bind-Value="_model.Role" Label="Role">
+                <PulsarRadio Option="@("admin")" Label="Admin" />
+                <PulsarRadio Option="@("editor")" Label="Editor" />
+                <PulsarRadio Option="@("viewer")" Label="Viewer" />
+            </PulsarRadioGroup>
+            <PulsarButton Color="PulsarColor.Primary" Type="submit">Save preferences</PulsarButton>
+        </EditForm>
+
+        @code {
+            private sealed class Model
+            {
+                [Required] public string? Plan { get; set; }
+                [Required] public string? Role { get; set; }
+            }
+
+            private readonly Model _model = new();
+        }
+        """;
+
+    private const string CheckboxesSwitchesCode = """
+        <EditForm Model="_model" OnValidSubmit="OnSubmit">
+            <DataAnnotationsValidator />
+            <PulsarCheckbox @bind-Value="_model.AcceptTerms" Label="I accept the terms of service" />
+            <PulsarSwitch @bind-Value="_model.Notifications" Label="Email notifications" />
+            <PulsarButton Color="PulsarColor.Primary" Type="submit">Save settings</PulsarButton>
+        </EditForm>
+
+        @code {
+            private sealed class Model
+            {
+                // A bool [Range] pinned to "true" is the standard DataAnnotations trick for a
+                // "must be checked" checkbox — there's no dedicated [MustBeTrue] attribute.
+                [Range(typeof(bool), "true", "true", ErrorMessage = "You must accept the terms")]
+                public bool AcceptTerms { get; set; }
+
+                public bool Notifications { get; set; }
+            }
+
+            private readonly Model _model = new();
+        }
+        """;
+
+    private const string SegmentedToggleCode = """
+        <EditForm Model="_model" OnValidSubmit="OnSubmit">
+            <DataAnnotationsValidator />
+            <PulsarSegmented @bind-Value="_model.Billing" Label="Billing cycle">
+                <PulsarSegmentedItem Option="@("Monthly")" Label="Monthly" />
+                <PulsarSegmentedItem Option="@("Yearly")" Label="Yearly" />
+            </PulsarSegmented>
+            <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+        </EditForm>
+
+        @* PulsarButtonGroup's Toggle mode is plain @bind-Value state — it has no ValueExpression/
+           Validators/EditContext hookup, so it can't join the EditForm above. *@
+        <PulsarButtonGroup Toggle="true" Variant="PulsarVariant.Outlined" @bind-Value="_view">
+            <PulsarButton Value="Day">Day</PulsarButton>
+            <PulsarButton Value="Week">Week</PulsarButton>
+            <PulsarButton Value="Month">Month</PulsarButton>
+        </PulsarButtonGroup>
+
+        @code {
+            private sealed class Model
+            {
+                [Required] public string? Billing { get; set; }
+            }
+
+            private readonly Model _model = new();
+            private string? _view = "Week";
+        }
+        """;
+
+    private const string AutocompleteCode = """
+        <EditForm Model="_model" OnValidSubmit="OnSubmit">
+            <DataAnnotationsValidator />
+            <PulsarAutocomplete @bind-Value="_model.Country" Items="Countries" Label="Country" Clearable="true" />
+            <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+        </EditForm>
+
+        @* AllowCustomValue lets a string-typed autocomplete accept free text instead of forcing a
+           pick from Items — here Items is empty, so it behaves like a plain tag input. *@
+        <PulsarAutocomplete @bind-Value="_tag" Items="@(Array.Empty<string>())" AllowCustomValue="true" Label="Add a tag" />
+
+        @code {
+            private sealed class Model
+            {
+                [Required] public string? Country { get; set; }
+            }
+
+            private readonly Model _model = new();
+            private string? _tag;
+            private static readonly string[] Countries = ["United States", "Canada", "United Kingdom", /* ... */];
+        }
+        """;
+
+    private const string SlidersCode = """
+        @* PulsarSlider has no Label parameter of its own — pair it with a plain PulsarText. *@
+        <EditForm Model="_model" OnValidSubmit="OnSubmit">
+            <DataAnnotationsValidator />
+            <PulsarText Variant="PulsarTextVariant.Body2">Volume</PulsarText>
+            @* margin-top reserves room for the floating value-label bubble above the track. *@
+            <PulsarSlider @bind-Value="_model.Volume" Min="0" Max="100"
+                          ShowValueLabel="PulsarSliderValueLabelDisplay.On" Style="margin-top: 32px;" />
+            <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+        </EditForm>
+
+        @* Range mode is a SEPARATE Lower/Upper value pair, not a tuple — each has its own
+           ValueChanged/ValueExpression/Validators/Control, toggled via Range="true". *@
+        <PulsarText Variant="PulsarTextVariant.Body2">Price range</PulsarText>
+        <PulsarSlider Range="true" @bind-LowerValue="_priceLower" @bind-UpperValue="_priceUpper"
+                      Min="0" Max="500" ShowValueLabel="PulsarSliderValueLabelDisplay.On" Style="margin-top: 32px;" />
+
+        @code {
+            private sealed class Model
+            {
+                public double Volume { get; set; } = 50;
+            }
+
+            private readonly Model _model = new();
+            private double _priceLower = 50;
+            private double _priceUpper = 250;
+        }
+        """;
+
+    private const string DatePickersCode = """
+        <EditForm Model="_model" OnValidSubmit="OnSubmit">
+            <DataAnnotationsValidator />
+            <PulsarDatePicker @bind-Value="_model.StartDate" Label="Start date" />
+            <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+        </EditForm>
+
+        @* PulsarDateSelector is the same calendar, always visible instead of behind a popover. *@
+        <PulsarDateSelector @bind-Value="_meetingDate" Label="Meeting date" />
+
+        @code {
+            private sealed class Model
+            {
+                [Required] public DateOnly? StartDate { get; set; }
+            }
+
+            private readonly Model _model = new();
+            private DateOnly? _meetingDate = DateOnly.FromDateTime(DateTime.Today);
+        }
+        """;
+
+    private const string TimePickersCode = """
+        <EditForm Model="_model" OnValidSubmit="OnSubmit">
+            <DataAnnotationsValidator />
+            <PulsarTimePicker @bind-Value="_model.MeetingTime" Label="Meeting time" />
+            <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+        </EditForm>
+
+        <PulsarTimeSelector Value="@_referenceTime" PickerStyle="PulsarTimeSelectorStyle.Clock" />
+
+        @code {
+            private sealed class Model
+            {
+                [Required] public TimeOnly? MeetingTime { get; set; }
+            }
+
+            private readonly Model _model = new();
+            private readonly TimeOnly _referenceTime = new(14, 30);
+        }
+        """;
+
+    private const string DateTimeRangeCode = """
+        <EditForm Model="_model" OnValidSubmit="OnSubmit">
+            <DataAnnotationsValidator />
+            <PulsarDateRangePicker @bind-Value="_model.Vacation" Label="Vacation" />
+            <PulsarDateRangeSelector @bind-Value="_model.Vacation" Label="Same range, always-visible" />
+            <PulsarDateTimePicker @bind-Value="_model.Appointment" Label="Departure" />
+            <PulsarButton Color="PulsarColor.Primary" Type="submit">Save trip</PulsarButton>
+        </EditForm>
+
+        @code {
+            // PulsarDateRange/PulsarDateTime are non-nullable structs, so a bare [Required] can't
+            // detect an empty one — IValidatableObject + IsEmpty is the documented workaround.
+            private sealed class Model : IValidatableObject
+            {
+                public PulsarDateRange Vacation { get; set; }
+                public PulsarDateTime Appointment { get; set; }
+
+                public IEnumerable<ValidationResult> Validate(ValidationContext context)
+                {
+                    if (Vacation.IsEmpty)
+                        yield return new ValidationResult("Vacation dates are required.", [nameof(Vacation)]);
+                    if (Appointment.IsEmpty)
+                        yield return new ValidationResult("Departure date and time are required.", [nameof(Appointment)]);
+                }
+            }
+
+            private readonly Model _model = new();
+        }
+        """;
+
+    private const string ColorsCode = """
+        <EditForm Model="_model" OnValidSubmit="OnSubmit">
+            <DataAnnotationsValidator />
+            <PulsarColorPicker @bind-Value="_model.AccentColor" Label="Accent color" />
+            <PulsarButton Color="PulsarColor.Primary" Type="submit">Save</PulsarButton>
+        </EditForm>
+
+        @* PulsarColorSelector is the always-visible picking surface PulsarColorPicker pops open —
+           SpectrumStyle.Swatches renders it as a curated preset grid instead of a hue/saturation UI. *@
+        <PulsarColorSelector @bind-Value="_paletteColor" SpectrumStyle="PulsarColorSelectorSpectrumStyle.Swatches" Label="Palette" />
+
+        @* PulsarSwatchGroup is a separate, simpler preset chooser — also plain @bind-Value, no
+           EditForm/[Required] support. *@
+        <PulsarSwatchGroup @bind-Value="_swatch" Label="Quick pick">
+            <PulsarSwatch Option="@("blue")" Hex="#0D6EFD" Label="Blue" />
+            <PulsarSwatch Option="@("purple")" Hex="#9C36B5" Label="Purple" />
+        </PulsarSwatchGroup>
+
+        @code {
+            private sealed class Model
+            {
+                [Required] public string? AccentColor { get; set; }
+            }
+
+            private readonly Model _model = new() { AccentColor = "#4C6FFF" };
+            private string? _paletteColor = "#4C6FFF";
+            private string? _swatch = "blue";
+        }
+        """;
+}
