@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="PulsarComponents" Version="0.19.3" />
+    <PackageReference Include="PulsarComponents" Version="0.20.0" />
   </ItemGroup>
 
 </Project>
