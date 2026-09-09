@@ -109,16 +109,16 @@
         @if (_formAllDay)
         {
             <div style="display: flex; gap: 12px;">
-                <PulsarDatePicker @bind-Value="_formDate" Label="Start date" FullWidth Style="flex: 1 1 0; min-width: 0;" />
-                <PulsarDatePicker @bind-Value="_formEndDate" Label="End date" FullWidth Style="flex: 1 1 0; min-width: 0;" />
+                <PulsarDatePicker @bind-Value="_formDate" Label="Start date" FullWidth Style="flex: 1 1 0; min-width: 0;" CloseOnSelect="true" />
+                <PulsarDatePicker @bind-Value="_formEndDate" Label="End date" FullWidth Style="flex: 1 1 0; min-width: 0;" CloseOnSelect="true" />
             </div>
         }
         else
         {
-            <PulsarDatePicker @bind-Value="_formDate" Label="Date" FullWidth />
+            <PulsarDatePicker @bind-Value="_formDate" Label="Date" FullWidth CloseOnSelect="true" />
             <div style="display: flex; gap: 12px;">
-                <PulsarTimePicker @bind-Value="_formStartTime" Label="Start time" FullWidth Style="flex: 1 1 0; min-width: 0;" />
-                <PulsarTimePicker @bind-Value="_formEndTime" Label="End time" FullWidth Style="flex: 1 1 0; min-width: 0;" />
+                <PulsarTimePicker @bind-Value="_formStartTime" Label="Start time" FullWidth Style="flex: 1 1 0; min-width: 0;" CloseOnSelect="true" />
+                <PulsarTimePicker @bind-Value="_formEndTime" Label="End time" FullWidth Style="flex: 1 1 0; min-width: 0;" CloseOnSelect="true" />
             </div>
         }
         <PulsarSelect @bind-Value="_formColor" Label="Color" FullWidth>
